@@ -206,7 +206,6 @@
                             produtoId: product.id,
                             produtoNome: product.nome,
                             quantidade: qty,
-                            precoCusto: product.precoCusto,
                             precoVenda: product.precoVenda,
                             lucro: profit,
                             total: qty * product.precoVenda,
@@ -475,15 +474,6 @@
                                         value={newProduct.estoqueMinimo}
                                         onChange={(e) => setNewProduct({...newProduct, estoqueMinimo: e.target.value})}
                                         className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                                    />
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Preço de Custo"
-                                        value={newProduct.precoCusto}
-                                        onChange={(e) => setNewProduct({...newProduct, precoCusto: e.target.value})}
-                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                                    />
                                     <input
                                         type="number"
                                         step="0.01"
@@ -665,8 +655,8 @@
                                                                     type="number"
                                                                     step="0.01"
                                                                     value={product.precoCusto}
-                                                                    onChange={(e) => updateProductPrice(product.id, 'precoCusto', e.target.value)}
-                                                                    className="bg-white/20 text-white rounded p-1 w-full text-sm"
+                                                                    disabled
+                                                                    className="bg-gray-500/20 text-white rounded p-1 w-full text-sm cursor-not-allowed"
                                                                 />
                                                             </div>
                                                             <div>
