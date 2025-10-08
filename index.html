@@ -469,20 +469,25 @@
                                         className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                                     />
                                     <input
-                                        type="number"
-                                        placeholder="Estoque Mínimo"
-                                        value={newProduct.estoqueMinimo}
-                                        onChange={(e) => setNewProduct({...newProduct, estoqueMinimo: e.target.value})}
-                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                                    />
+                                      type="number"
+                                      step="1"
+                                      placeholder="Estoque Mínimo"
+                                      value={newProduct.estoqueMinimo}
+                                      onChange={(e) =>
+                                        setNewProduct({ ...newProduct, estoqueMinimo: e.target.value })
+                                      }
+                                      className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                     />
                                     <input
                                         type="number"
                                         step="0.01"
                                         placeholder="Preço de Venda"
                                         value={newProduct.precoVenda}
-                                        onChange={(e) => setNewProduct({...newProduct, precoVenda: e.target.value})}
+                                        onChange={(e) =>
+                                          setNewProduct({ ...newProduct, precoVenda: e.target.value })
+                                        }
                                         className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                                    />
+                                      />
                                     <div className="flex items-center gap-3 bg-white/20 rounded-lg p-3 border border-white/30">
                                         <input
                                             type="checkbox"
