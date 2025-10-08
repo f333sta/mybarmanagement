@@ -818,7 +818,8 @@
                                                         <p className="text-white font-semibold">R$ {maxPrice.toFixed(2)}</p>
                                                     </div>
                                                 </div>
-                                                
+
+                                              <>
                                                 <div className="space-y-1">
                                                     {productPurchases.slice().reverse().map(purchase => (
                                                         <div key={purchase.id} className="flex justify-between text-sm bg-white/5 rounded p-2">
@@ -829,9 +830,10 @@
                                                     ))}
                                                 </div>
                                             </div>
-                                          <footer className="text-center text-xs text-purple-400/60 mt-8 mb-3 tracking-wide">
-                                            Crafted with ☕ by <span className="text-purple-200 font-semibold">Lucas Festa</span> — 2025
-                                          </footer>
+                                            <footer className="text-center text-xs text-purple-400/60 mt-8 mb-3 tracking-wide">
+                                              Crafted with ☕ by <span className="text-purple-200 font-semibold">Lucas Festa</span> — 2025
+                                            </footer>
+                                           </>
                                         );
                                     })}
                                 </div>
