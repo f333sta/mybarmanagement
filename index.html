@@ -819,38 +819,31 @@
                                                     </div>
                                                 </div>
 
-                                              <>
                                                 <div className="space-y-1">
-                                                  {productPurchases.slice().reverse().map(purchase => (
-                                                    <div key={purchase.id} className="flex justify-between text-sm bg-white/5 rounded p-2">
-                                                      <span className="text-purple-200">{purchase.data}</span>
-                                                      <span className="text-white">{purchase.quantidade}un × R$ {parseFloat(purchase.precoCusto || 0).toFixed(2)}</span>
-                                                      <span className="text-purple-300">R$ {parseFloat(purchase.total || 0).toFixed(2)}</span>
-                                                    </div>
-                                                  ))}
+                                                    {productPurchases.slice().reverse().map(purchase => (
+                                                        <div key={purchase.id} className="flex justify-between text-sm bg-white/5 rounded p-2">
+                                                            <span className="text-purple-200">{purchase.data}</span>
+                                                            <span className="text-white">{purchase.quantidade}un × R$ {parseFloat(purchase.precoCusto || 0).toFixed(2)}</span>
+                                                            <span className="text-purple-300">R$ {parseFloat(purchase.total || 0).toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                              </>
-                                              </div>
-                                              );
-                                              })}
-                                              </div>
-                                              </div>
-
-                                <footer className="fixed bottom-0 left-0 w-full bg-slate-900/80 text-center text-xs text-purple-400/60 py-2 backdrop-blur-md border-t border-purple-500/30">
-                                  Crafted with ☕ by <span className="text-purple-200 font-semibold">Lucas Festa</span> – 2025
-                                </footer>
-                            </div>
+                                            </div>
                                         );
                                     })}
                                 </div>
                             </div>
                         )}
                     </div>
+                    
+                    <footer className="fixed bottom-0 left-0 w-full bg-slate-900/80 text-center text-xs text-purple-400/60 py-2 backdrop-blur-md border-t border-purple-500/30">
+                        Crafted with ☕ by <span className="text-purple-200 font-semibold">Lucas Festa</span> – 2025
+                    </footer>
                 </div>
-               );
-              };
+            );
+        };
 
-ReactDOM.render(<BarManagementSystem />, document.getElementById('root'));
+        ReactDOM.render(<BarManagementSystem />, document.getElementById('root'));
     </script>
 </body>
 </html>
