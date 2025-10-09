@@ -273,24 +273,45 @@
             };
 
             const updateProductPrice = async (productId, field, value) => {
-                const product = products.find(p => p.id === productId);
-                const updatedProduct = { ...product, [field]: parseFloat(value) || 0 };
-                
-                try {
-                    const response = await fetch(`${API_URL}?action=updateProduto`, {
-                        method: 'POST',
-                        body: JSON.stringify(updatedProduct)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        loadAllData();
-                    }
-                } catch (err) {
-                    alert('Erro ao atualizar: ' + err.message);
-                }
-            };
+  const product = products.find(p => p.id === productId);
+  if (!product) return;
+
+  const fieldLabels = {
+    nome: 'Nome do Produto',
+    codigo: 'Código',
+    estoqueMinimo: 'Estoque Mínimo',
+    precoVenda: 'Preço de Venda'
+  };
+  const label = fieldLabels[field] || field;
+
+  // Usando o novo alerta de confirmação
+  showConfirm(`Deseja alterar o campo "${label}" de "${product[field] ?? 'vazio'}" para "${value}"?`, async () => {
+    const updatedValue = ['estoqueMinimo', 'precoVenda'].includes(field)
+      ? parseFloat(value) || 0
+      : value;
+
+    const updatedProduct = { ...product, [field]: updatedValue };
+
+    try {
+      const response = await fetch(`${API_URL}?action=updateProduto`, {
+        method: "POST",
+        body: JSON.stringify(updatedProduct),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showAlert("✅ Alteração salva com sucesso!", "success");
+        loadAllData();
+      } else {
+        showAlert("⚠️ Falha ao atualizar o produto.", "error");
+      }
+    } catch (err) {
+      showAlert("❌ Erro ao atualizar: " + err.message, "error");
+    }
+  });
+};
+
 
             const stats = useMemo(() => {
                 const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
@@ -852,6 +873,47 @@
                                 </div>
                             </div>
                         )}
+                    {/* Alerta/Confirmação Global */}
+{alertBox.visible && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+    <div className={`rounded-2xl shadow-lg p-6 w-80 text-center border 
+      ${alertBox.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-200' :
+        alertBox.type === 'success' ? 'bg-green-500/20 border-green-500 text-green-200' :
+        alertBox.type === 'confirm' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' :
+        'bg-purple-500/20 border-purple-500 text-purple-200'}
+    `}>
+      <p className="text-lg font-semibold mb-4">{alertBox.message}</p>
+      
+      {alertBox.confirmMode ? (
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => {
+              setAlertBox({ ...alertBox, visible: false });
+              if (alertBox.onConfirm) alertBox.onConfirm();
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+          >
+            Confirmar
+          </button>
+          <button
+            onClick={() => setAlertBox({ ...alertBox, visible: false })}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAlertBox({ ...alertBox, visible: false })}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg"
+        >
+          OK
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
                     </div>
                     
                     <footer className="fixed bottom-0 left-0 w-full text-center text-xs text-purple-400/60 py-2">
