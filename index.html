@@ -841,25 +841,29 @@
                                                                 />
                                                             </td>
                                                             <td className="px-4 py-2 text-center">
-                                                                <select
-                                                                    defaultValue={product.controlaEstoque ? "true" : "false"}
-                                                                    onBlur={(e) => {
+                                                                <td className="px-4 py-2 text-center">
+                                                                  <label className="flex justify-center items-center gap-2 text-white">
+                                                                    <input
+                                                                      type="checkbox"
+                                                                      defaultChecked={product.controlaEstoque}
+                                                                      onChange={(e) => {
                                                                         const oldValue = product.controlaEstoque;
-                                                                        const newValue = e.target.value === "true";
+                                                                        const newValue = e.target.checked;
+
                                                                         if (oldValue !== newValue) {
-                                                                            showConfirm(
-                                                                                `Deseja alterar Controla Estoque de "${oldValue ? 'Sim' : 'Não'}" para "${newValue ? 'Sim' : 'Não'}"?`,
-                                                                                () => handleProductEdit(product, "controlaEstoque", newValue)
-                                                                            );
-                                                                            // Reverte o campo caso o usuário cancele
-                                                                            e.target.value = oldValue;                                                                          
+                                                                          showConfirm(
+                                                                            `Deseja alterar Controla Estoque de "${oldValue ? 'Sim' : 'Não'}" para "${newValue ? 'Sim' : 'Não'}"?`,
+                                                                            () => handleProductEdit(product, "controlaEstoque", newValue)
+                                                                          );
+                                                                          // Reverte o estado visual caso o usuário cancele
+                                                                          e.target.checked = oldValue;
                                                                         }
-                                                                    }}
-                                                                    className="bg-white/20 text-white rounded p-1 w-20 text-center"
-                                                                >
-                                                                    <option value="true" className="text-black">Sim</option>
-                                                                    <option value="false" className="text-black">Não</option>
-                                                                </select>
+                                                                      }}
+                                                                      className="w-5 h-5 accent-purple-500 cursor-pointer"
+                                                                    />
+                                                                  </label>
+                                                                </td>
+
                                                             </td>
                                                         </tr>
                                                     ))}
