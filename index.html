@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyBarManagement</title>
+
+  <script>
+    window.onerror = function (msg, url, line, col, error) {
+      alert("Erro detectado: " + msg);
+    };
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel" data-presets="react">
+        const { useState, useMemo, useEffect } = React;
+        
+        // IMPORTANTE: Substitua pela URL do seu Google Apps Script /exec
+        const API_URL = "https://script.google.com/macros/s/AKfycbxjzp0o98iEmRKRlznjFOgZEEDpNfFHOLqrtFn6aFyKf0FaxzrNDmuONd-jvDXYUD0IBw/exec";
+
+        
+        // Ícones SVG
+        const icons = {
+            BarChart3: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            ),
+            Package: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            ),
+            DollarSign: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+            TrendingUp: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            ),
+            AlertTriangle: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            ),
+            Plus: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+            ),
+            ShoppingCart: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            ),
+            History: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+            RefreshCw: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            )
+        };
+
+        const BarManagementSystem = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            
+            const [products, setProducts] = useState([]);
+            const [purchases, setPurchases] = useState([]);
+            const [sales, setSales] = useState([]);
+            const [transactions, setTransactions] = useState([]);
+            
+            const [newPurchase, setNewPurchase] = useState({ productId: '', quantity: '', costPrice: '', date: new Date().toISOString().split('T')[0] });
+            const [newSale, setNewSale] = useState({ productId: '', quantity: '', date: new Date().toISOString().split('T')[0] });
+            const [newTransaction, setNewTransaction] = useState({ type: 'entrada', description: '', amount: '', date: new Date().toISOString().split('T')[0] });
+            const [newProduct, setNewProduct] = useState({ nome: '', categoria: '', codigo: '', estoqueMinimo: 0, precoCusto: 0, precoVenda: 0, controlaEstoque: true });
+
+           // ✅ Passo 1 — Sistema de Alertas
+    const [alertBox, setAlertBox] = useState({
+      visible: false,
+      message: '',
+      type: 'info',
+      onConfirm: null,
+      confirmMode: false
+    });
+
+    const showAlert = (message, type = 'info') => {
+      setAlertBox({ visible: true, message, type, confirmMode: false });
+      setTimeout(() => setAlertBox({ visible: false, message: '', type: 'info', confirmMode: false }), 2500);
+    };
+
+    const showConfirm = (message, onConfirm) => {
+      setAlertBox({ visible: true, message, type: 'confirm', confirmMode: true, onConfirm });
+    };
+
+            // Carregar dados ao iniciar
+            useEffect(() => {
+                loadAllData();
+            }, []);
+
+            const loadAllData = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const response = await fetch(`${API_URL}?action=getAllData`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    setProducts(data.produtos || []);
+                    setPurchases(data.compras || []);
+                    setSales(data.vendas || []);
+                    setTransactions(data.transacoes || []);
+                    
+                    setLoading(false);
+                } catch (err) {
+                    setError(err.message);
+                    setLoading(false);
+                }
+            };
+
+            const addProduct = async () => {
+                if (!newProduct.nome || !newProduct.categoria || !newProduct.codigo) {
+                    alert('Preencha nome, categoria e código!');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}?action=addProduto`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            ...newProduct,
+                            estoque: 0
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showAlert('✅ Produto cadastrado com sucesso!', 'success');
+                        setNewProduct({ nome: '', categoria: '', codigo: '', estoqueMinimo: 0, precoCusto: 0, precoVenda: 0, controlaEstoque: true });
+                        loadAllData();
+                    } else {
+                        showAlert('⚠️ Erro ao cadastrar produto.', 'error');
+                    }
+                } catch (err) {
+                    showAlert('❌ ' + err.message, 'error');
+                }
+            };
+
+            const addPurchase = async () => {
+                if (!newPurchase.productId || !newPurchase.quantity || !newPurchase.costPrice) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+                
+                const product = products.find(p => p.id == newPurchase.productId);
+                const qty = parseInt(newPurchase.quantity);
+                const cost = parseFloat(newPurchase.costPrice);
+                
+                try {
+                    const response = await fetch(`${API_URL}?action=addCompra`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            produtoId: product.id,
+                            produtoNome: product.nome,
+                            quantidade: qty,
+                            precoCusto: cost,
+                            total: qty * cost,
+                            data: newPurchase.date
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('Compra registrada!');
+                        setNewPurchase({ productId: '', quantity: '', costPrice: '', date: new Date().toISOString().split('T')[0] });
+                        loadAllData();
+                    }
+                } catch (err) {
+                    showAlert('❌ ' + err.message, 'error');
+                }
+            };
+
+            const addSale = async () => {
+                if (!newSale.productId || !newSale.quantity) {
+                    alert('Preencha todos os campos!');
+                    return;
+                }
+                
+                const product = products.find(p => p.id == newSale.productId);
+                const qty = parseInt(newSale.quantity);
+                
+                if (product.controlaEstoque && product.estoque < qty) {
+                    alert('Estoque insuficiente!');
+                    return;
+                }
+                
+                try {
+                    const profit = (product.precoVenda - product.precoCusto) * qty;
+                    
+                    const response = await fetch(`${API_URL}?action=addVenda`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            produtoId: product.id,
+                            produtoNome: product.nome,
+                            quantidade: qty,
+                            precoVenda: product.precoVenda,
+                            lucro: profit,
+                            total: qty * product.precoVenda,
+                            data: newSale.date
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showAlert('✅ Venda registrada!', 'success');
+                        setNewSale({ productId: '', quantity: '', date: new Date().toISOString().split('T')[0] });
+                        loadAllData();
+                    }
+                } catch (err) {
+                    alert('Erro: ' + err.message);
+                }
+            };
+
+            const addTransactionManual = async () => {
+                if (!newTransaction.description || !newTransaction.amount) {
+                    alert('Preencha descrição e valor!');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}?action=addTransacao`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            tipo: newTransaction.type,
+                            descricao: newTransaction.description,
+                            valor: parseFloat(newTransaction.amount),
+                            data: newTransaction.date
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showAlert('✅ Transação registrada!', 'success');
+                        setNewTransaction({ type: 'entrada', description: '', amount: '', date: new Date().toISOString().split('T')[0] });
+                        loadAllData();
+                    }
+                } catch (err) {
+                    alert('Erro: ' + err.message);
+                }
+            };
+
+            const updateProductPrice = async (productId, field, value) => {
+    // ⛔ Bloqueia atualização se não estiver na aba de cadastro
+    if (activeTab !== "cadastro") return;
+
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const updatedValue = ['estoqueMinimo', 'precoVenda'].includes(field)
+        ? parseFloat(value) || 0
+        : value;
+
+    const updatedProduct = { ...product, [field]: updatedValue };
+
+    try {
+        const response = await fetch(`${API_URL}?action=updateProduto`, {
+            method: "POST",
+            body: JSON.stringify(updatedProduct),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert("✅ Alteração salva com sucesso!", "success");
+            loadAllData();
+        } else {
+            showAlert("⚠️ Falha ao atualizar o produto.", "error");
+        }
+    } catch (err) {
+        showAlert("❌ Erro ao atualizar: " + err.message, "error");
+    }
+};
+
+            const stats = useMemo(() => {
+                const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
+                const totalExpenses = transactions.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
+                const totalProfit = sales.reduce((sum, s) => sum + parseFloat(s.lucro || 0), 0);
+                const stockValue = products.reduce((sum, p) => sum + (parseFloat(p.estoque || 0) * parseFloat(p.precoCusto || 0)), 0);
+                const lowStock = products.filter(p => p.controlaEstoque && parseFloat(p.estoque || 0) < parseFloat(p.estoqueMinimo || 0) && parseFloat(p.estoqueMinimo || 0) > 0);
+                
+                return { totalRevenue, totalExpenses, totalProfit, stockValue, lowStock, balance: totalRevenue - totalExpenses };
+            }, [transactions, sales, products]);
+
+            const salesByCategory = useMemo(() => {
+                const byCategory = {};
+                sales.forEach(sale => {
+                    const product = products.find(p => p.id == sale.produtoId);
+                    if (product) {
+                        const cat = product.categoria;
+                        if (!byCategory[cat]) {
+                            byCategory[cat] = { quantity: 0, revenue: 0 };
+                        }
+                        byCategory[cat].quantity += parseInt(sale.quantidade || 0);
+                        byCategory[cat].revenue += parseFloat(sale.total || 0);
+                    }
+                });
+                return Object.entries(byCategory).map(([name, data]) => ({ name, ...data }));
+            }, [sales, products]);
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+                        <div className="text-white text-2xl">Carregando dados...</div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+                        <div className="bg-red-500/20 border border-red-500 rounded-xl p-8 max-w-lg">
+                            <h2 className="text-white text-2xl font-bold mb-4">Erro de Conexão</h2>
+                            <p className="text-red-200 mb-4">{error}</p>
+                            <p className="text-sm text-red-300 mb-4">Verifique se você configurou corretamente a URL da API no código HTML.</p>
+                            <button
+                                onClick={loadAllData}
+                                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold"
+                            >
+                                Tentar Novamente
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-10 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-white mb-2">🍺 MyBarManagement</h1>
+                                    <p className="text-purple-200">Controle completo de vendas, estoque e financeiro</p>
+                                </div>
+                                <button
+                                    onClick={loadAllData}
+                                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                                >
+                                    <icons.RefreshCw /> Atualizar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {['dashboard', 'vendas', 'compras', 'estoque', 'cadastro', 'financeiro', 'historico'].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                                        activeTab === tab
+                                            ? 'bg-purple-500 text-white shadow-lg scale-105'
+                                            : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                                    }`}
+                                >
+                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <icons.DollarSign />
+                                            <icons.TrendingUp />
+                                        </div>
+                                        <p className="text-green-100 text-sm">Saldo Total</p>
+                                        <p className="text-3xl font-bold">R$ {stats.balance.toFixed(2)}</p>
+                                    </div>
+                                    
+                                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <icons.BarChart3 />
+                                        </div>
+                                        <p className="text-blue-100 text-sm">Lucro Total</p>
+                                        <p className="text-3xl font-bold">R$ {stats.totalProfit.toFixed(2)}</p>
+                                    </div>
+                                    
+                                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <icons.Package />
+                                        </div>
+                                        <p className="text-purple-100 text-sm">Valor em Estoque</p>
+                                        <p className="text-3xl font-bold">R$ {stats.stockValue.toFixed(2)}</p>
+                                    </div>
+                                    
+                                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <icons.AlertTriangle />
+                                        </div>
+                                        <p className="text-orange-100 text-sm">Alertas de Estoque</p>
+                                        <p className="text-3xl font-bold">{stats.lowStock.length}</p>
+                                    </div>
+                                </div>
+
+                                {stats.lowStock.length > 0 && (
+                                    <div className="bg-orange-500/20 backdrop-blur-lg rounded-xl p-6 border border-orange-500/30">
+                                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                            <icons.AlertTriangle />
+                                            Produtos com Estoque Baixo
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {stats.lowStock.map(product => (
+                                                <div key={product.id} className="bg-white/10 rounded-lg p-4">
+                                                    <p className="text-white font-semibold">{product.nome}</p>
+                                                    <p className="text-orange-200 text-sm">Estoque: {product.estoque} / Mínimo: {product.estoqueMinimo}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                    <h3 className="text-xl font-bold text-white mb-4">Vendas por Categoria</h3>
+                                    {salesByCategory.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {salesByCategory.map(cat => (
+                                                <div key={cat.name} className="bg-white/5 rounded-lg p-4">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-white font-semibold">{cat.name}</span>
+                                                        <span className="text-purple-300">R$ {cat.revenue.toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-purple-200">{cat.quantity} unidades vendidas</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-purple-300 text-center py-8">Nenhuma venda registrada ainda</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'cadastro' && (
+  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+      <h3 className="text-2xl font-bold text-white mb-6">Cadastrar Novo Produto</h3>
+
+     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <input
+    type="text"
+    placeholder="Nome do produto"
+    value={newProduct.nome}
+    onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
+    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+  />
+  <input
+    type="text"
+    placeholder="Categoria"
+    value={newProduct.categoria}
+    onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
+    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+  />
+  <input
+    type="text"
+    placeholder="Código"
+    value={newProduct.codigo}
+    onChange={(e) => setNewProduct({ ...newProduct, codigo: e.target.value })}
+    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+  />
+  <input
+    type="number"
+    step="1"
+    min="0"
+    placeholder="Estoque mínimo"
+    value={newProduct.estoqueMinimo}
+    onChange={(e) => setNewProduct({ ...newProduct, estoqueMinimo: e.target.value })}
+    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+  />
+  <input
+    type="number"
+    step="0.01"
+    placeholder="Preço de venda"
+    value={newProduct.precoVenda}
+    onChange={(e) => setNewProduct({ ...newProduct, precoVenda: e.target.value })}
+    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+  />
+  <button
+    onClick={addProduct}
+    className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 md:col-span-2"
+  >
+    <icons.Plus /> Cadastrar Produto
+  </button>
+</div>
+
+
+      {/* 👇 LISTAGEM DE PRODUTOS DEVE VIR AQUI, DENTRO DESTE MESMO DIV */}
+      <h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
+      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+        {products.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-purple-100">
+              <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                <tr>
+                  <th className="px-4 py-3">Código</th>
+                  <th className="px-4 py-3">Produto</th>
+                  <th className="px-4 py-3 text-center">Estoque Mínimo</th>
+                  <th className="px-4 py-3 text-center">Preço de Venda (R$)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b border-white/5 hover:bg-white/10 transition">
+                    <td className="px-4 py-2 text-center">
+                      <input
+                        type="text"
+                        value={product.codigo || ""}
+                        onChange={(e) =>
+                          updateProductPrice(product.id, "codigo", e.target.value.toUpperCase())
+                        }
+                        className="bg-white/20 text-white rounded p-1 w-20 text-center uppercase"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={product.nome || ""}
+                        onChange={(e) =>
+                          updateProductPrice(product.id, "nome", e.target.value)
+                        }
+                        className="bg-white/20 text-white rounded p-1 w-full"
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        value={product.estoqueMinimo || 0}
+                        onChange={(e) =>
+                          updateProductPrice(product.id, "estoqueMinimo", e.target.value)
+                        }
+                        className="bg-white/20 text-white rounded p-1 w-20 text-center"
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-center">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={product.precoVenda || 0}
+                        onChange={(e) =>
+                          updateProductPrice(product.id, "precoVenda", e.target.value)
+                        }
+                        className="bg-white/20 text-white rounded p-1 w-24 text-center"
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-purple-300 text-center py-6">Nenhum produto cadastrado ainda</p>
+        )}
+      </div>
+  </div>
+)}
+
+
+                        {activeTab === 'vendas' && (
+                            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                    <select
+                                        value={newSale.productId}
+                                        onChange={(e) => setNewSale({...newSale, productId: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    >
+                                        <option value="">Selecione o produto</option>
+                                        {products.map(p => (
+                                            <option key={p.id} value={p.id} className="text-black">
+                                                {p.nome} - R$ {parseFloat(p.precoVenda || 0).toFixed(2)} ({p.codigo})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="number"
+                                        placeholder="Quantidade"
+                                        value={newSale.quantity}
+                                        onChange={(e) => setNewSale({...newSale, quantity: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={newSale.date}
+                                        onChange={(e) => setNewSale({...newSale, date: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    />
+                                    <button
+                                        onClick={addSale}
+                                        className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        <icons.Plus /> Registrar
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {sales.length > 0 ? (
+                                        sales.slice().reverse().map(sale => (
+                                            <div key={sale.id} className="bg-white/5 rounded-lg p-4 flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-white font-semibold">{sale.produtoNome}</p>
+                                                    <p className="text-purple-200 text-sm">{sale.quantidade}un × R$ {parseFloat(sale.precoVenda || 0).toFixed(2)} | Lucro: R$ {parseFloat(sale.lucro || 0).toFixed(2)}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-green-400 font-bold">R$ {parseFloat(sale.total || 0).toFixed(2)}</p>
+                                                    <p className="text-purple-300 text-sm">{sale.data}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-purple-300 text-center py-8">Nenhuma venda registrada</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'compras' && (
+                            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                <h3 className="text-2xl font-bold text-white mb-6">Registrar Compra</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                                    <select
+                                        value={newPurchase.productId}
+                                        onChange={(e) => setNewPurchase({...newPurchase, productId: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    >
+                                        <option value="">Selecione o produto</option>
+                                        {products.map(p => (
+                                            <option key={p.id} value={p.id} className="text-black">
+                                                {p.nome} ({p.codigo})
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        type="number"
+                                        placeholder="Quantidade"
+                                        value={newPurchase.quantity}
+                                        onChange={(e) => setNewPurchase({...newPurchase, quantity: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Preço de Custo"
+                                        value={newPurchase.costPrice}
+                                        onChange={(e) => setNewPurchase({...newPurchase, costPrice: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={newPurchase.date}
+                                        onChange={(e) => setNewPurchase({...newPurchase, date: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    />
+                                    <button
+                                        onClick={addPurchase}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        <icons.ShoppingCart /> Registrar
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {purchases.length > 0 ? (
+                                        purchases.slice().reverse().map(purchase => (
+                                            <div key={purchase.id} className="bg-white/5 rounded-lg p-4 flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-white font-semibold">{purchase.produtoNome}</p>
+                                                    <p className="text-purple-200 text-sm">{purchase.quantidade}un × R$ {parseFloat(purchase.precoCusto || 0).toFixed(2)}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-blue-400 font-bold">R$ {parseFloat(purchase.total || 0).toFixed(2)}</p>
+                                                    <p className="text-purple-300 text-sm">{purchase.data}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-purple-300 text-center py-8">Nenhuma compra registrada</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'estoque' && (
+                            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                <h3 className="text-2xl font-bold text-white mb-6">Gestão de Estoque e Preços</h3>
+                                
+                                {['Cerveja', 'Drinks', 'Doses', 'Água', 'Energético', 'Refrigerante'].map(category => {
+                                    const categoryProducts = products.filter(p => p.categoria === category);
+                                    if (categoryProducts.length === 0) return null;
+                                    
+                                    return (
+                                        <div key={category} className="mb-6">
+                                            <h4 className="text-xl font-bold text-purple-300 mb-3">{category}</h4>
+                                            <div className="space-y-2">
+                                                {categoryProducts.map(product => (
+                                                    <div key={product.id} className="bg-white/5 rounded-lg p-4">
+                                                        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+                                                            <div className="md:col-span-2">
+                                                                <p className="text-white font-semibold">{product.nome}</p>
+                                                                <p className="text-purple-200 text-sm">Código: {product.codigo}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-purple-300 text-xs">Estoque</p>
+                                                                <p className="text-white font-bold">{product.estoque}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-purple-300 text-xs">Custo Médio</p>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={product.precoCusto}
+                                                                    disabled
+                                                                    className="bg-gray-500/20 text-white rounded p-1 w-full text-sm cursor-not-allowed"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-purple-300 text-xs">Preço Venda</p>
+                                                                <input
+  type="number"
+  step="0.01"
+  value={product.precoVenda}
+  disabled
+  className="bg-gray-500/20 text-white rounded p-1 w-full text-sm cursor-not-allowed"
+/>
+
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-purple-300 text-xs">Margem</p>
+                                                                <p className="text-green-400 font-bold">
+                                                                    {product.precoVenda > 0 ? 
+                                                                        `${(((product.precoVenda - product.precoCusto) / product.precoVenda) * 100).toFixed(1)}%` 
+                                                                        : '0%'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {activeTab === 'financeiro' && (
+                            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                <h3 className="text-2xl font-bold text-white mb-6">Fluxo de Caixa</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-green-500/20 rounded-lg p-4 border border-green-500/30">
+                                        <p className="text-green-300 text-sm">Total Entradas</p>
+                                        <p className="text-2xl font-bold text-white">R$ {stats.totalRevenue.toFixed(2)}</p>
+                                    </div>
+                                    <div className="bg-red-500/20 rounded-lg p-4 border border-red-500/30">
+                                        <p className="text-red-300 text-sm">Total Saídas</p>
+                                        <p className="text-2xl font-bold text-white">R$ {stats.totalExpenses.toFixed(2)}</p>
+                                    </div>
+                                    <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-500/30">
+                                        <p className="text-blue-300 text-sm">Saldo</p>
+                                        <p className="text-2xl font-bold text-white">R$ {stats.balance.toFixed(2)}</p>
+                                    </div>
+                                </div>
+
+                                <h4 className="text-xl font-bold text-white mb-4">Adicionar Transação Manual</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                                    <select
+                                        value={newTransaction.type}
+                                        onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    >
+                                        <option value="entrada" className="text-black">Entrada</option>
+                                        <option value="saida" className="text-black">Saída</option>
+                                    </select>
+                                    <input
+                                        type="text"
+                                        placeholder="Descrição"
+                                        value={newTransaction.description}
+                                        onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300 md:col-span-2"
+                                    />
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Valor"
+                                        value={newTransaction.amount}
+                                        onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="date"
+                                        value={newTransaction.date}
+                                        onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                                    />
+                                    <button
+                                        onClick={addTransactionManual}
+                                        className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 md:col-span-5"
+                                    >
+                                        <icons.Plus /> Adicionar
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {transactions.length > 0 ? (
+                                        transactions.slice().reverse().map(transaction => (
+                                            <div key={transaction.id} className={`rounded-lg p-4 flex justify-between items-center ${
+                                                transaction.tipo === 'entrada' ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'
+                                            }`}>
+                                                <div>
+                                                    <p className="text-white font-semibold">{transaction.descricao}</p>
+                                                    <p className="text-purple-200 text-sm">{transaction.data}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`font-bold text-xl ${transaction.tipo === 'entrada' ? 'text-green-400' : 'text-red-400'}`}>
+                                                        {transaction.tipo === 'entrada' ? '+' : '-'} R$ {parseFloat(transaction.valor || 0).toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-purple-300 text-center py-8">Nenhuma transação registrada</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'historico' && (
+                            <div className="space-y-6">
+                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                                        <icons.History />
+                                        Histórico de Compras por Produto
+                                    </h3>
+                                    
+                                    {products.map(product => {
+                                        const productPurchases = purchases.filter(p => p.produtoId == product.id);
+                                        if (productPurchases.length === 0) return null;
+                                        
+                                        const avgPrice = productPurchases.reduce((sum, p) => sum + parseFloat(p.precoCusto || 0), 0) / productPurchases.length;
+                                        const minPrice = Math.min(...productPurchases.map(p => parseFloat(p.precoCusto || 0)));
+                                        const maxPrice = Math.max(...productPurchases.map(p => parseFloat(p.precoCusto || 0)));
+                                        
+                                        return (
+                                            <div key={product.id} className="mb-6 bg-white/5 rounded-lg p-4">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-white">{product.nome}</h4>
+                                                        <p className="text-purple-200 text-sm">{product.categoria}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-purple-300 text-xs">Preço Médio Histórico</p>
+                                                        <p className="text-white font-bold">R$ {avgPrice.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                                    <div className="bg-blue-500/20 rounded p-2 text-center">
+                                                        <p className="text-blue-300 text-xs">Preço Atual</p>
+                                                        <p className="text-white font-semibold">R$ {parseFloat(product.precoCusto || 0).toFixed(2)}</p>
+                                                    </div>
+                                                    <div className="bg-green-500/20 rounded p-2 text-center">
+                                                        <p className="text-green-300 text-xs">Menor Preço</p>
+                                                        <p className="text-white font-semibold">R$ {minPrice.toFixed(2)}</p>
+                                                    </div>
+                                                    <div className="bg-red-500/20 rounded p-2 text-center">
+                                                        <p className="text-red-300 text-xs">Maior Preço</p>
+                                                        <p className="text-white font-semibold">R$ {maxPrice.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    {productPurchases.slice().reverse().map(purchase => (
+                                                        <div key={purchase.id} className="flex justify-between text-sm bg-white/5 rounded p-2">
+                                                            <span className="text-purple-200">{purchase.data}</span>
+                                                            <span className="text-white">{purchase.quantidade}un × R$ {parseFloat(purchase.precoCusto || 0).toFixed(2)}</span>
+                                                            <span className="text-purple-300">R$ {parseFloat(purchase.total || 0).toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    {/* Alerta/Confirmação Global */}
+{alertBox.visible && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+    <div className={`rounded-2xl shadow-lg p-6 w-80 text-center border 
+      ${alertBox.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-200' :
+        alertBox.type === 'success' ? 'bg-green-500/20 border-green-500 text-green-200' :
+        alertBox.type === 'confirm' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' :
+        'bg-purple-500/20 border-purple-500 text-purple-200'}
+    `}>
+      <p className="text-lg font-semibold mb-4">{alertBox.message}</p>
+      
+      {alertBox.confirmMode ? (
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => {
+              setAlertBox({ ...alertBox, visible: false });
+              if (alertBox.onConfirm) alertBox.onConfirm();
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+          >
+            Confirmar
+          </button>
+          <button
+            onClick={() => setAlertBox({ ...alertBox, visible: false })}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAlertBox({ ...alertBox, visible: false })}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg"
+        >
+          OK
+        </button>
+      )}
+    </div>
+  </div>
+)}
+
+                    </div>
+                    
+                    <footer className="fixed bottom-0 left-0 w-full text-center text-xs text-purple-400/60 py-2">
+                        Crafted with ☕ by <span className="text-purple-200 font-semibold"> LCSBR </span> – 2025
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<BarManagementSystem />, document.getElementById('root'));
+    </script>
+</body>
+</html>
