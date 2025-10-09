@@ -268,9 +268,9 @@
                 }
             }, [products, showAlert, loadAllData]);
 
-            const addProduct = useCallback(async () => {
-              const { nome, categoria, codigo, estoqueMinimo, precoVenda, controlaEstoque } = newProduct;
-            
+           const addProduct = useCallback(async () => {
+            const { nome, categoria, codigo, estoqueMinimo, precoVenda, controlaEstoque } = newProduct;
+
               // Verifica se todos os campos estão preenchidos
               if (!nome || !categoria || !codigo || estoqueMinimo === '' || precoVenda === '' || controlaEstoque === null) {
                 showAlert('❌ Preencha todos os campos do cadastro!', 'error');
@@ -300,8 +300,7 @@
               if (codigoExiste) {
                 showAlert('❌ Já existe um produto com este código!', 'error');
                 return;
-              }
-            
+                          
               try {
                 const response = await fetch(`${API_URL}?action=addProduto`, {
                   method: 'POST',
