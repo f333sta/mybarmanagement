@@ -17,15 +17,13 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* Remove as setas de todos os inputs numéricos */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-
     input[type=number] {
-      -moz-appearance: textfield; /* para Firefox */
+      -moz-appearance: textfield;
     }
   </style>
 </head>
@@ -33,11 +31,9 @@
     <div id="root"></div>
     
     <script type="text/babel" data-presets="react">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo, useEffect, useCallback } = React;
         
-        // IMPORTANTE: Substitua pela URL do seu Google Apps Script /exec
         const API_URL = "https://script.google.com/macros/s/AKfycbxjzp0o98iEmRKRlznjFOgZEEDpNfFHOLqrtFn6aFyKf0FaxzrNDmuONd-jvDXYUD0IBw/exec";
-
         
         // Ícones SVG
         const icons = {
@@ -98,35 +94,63 @@
             const [sales, setSales] = useState([]);
             const [transactions, setTransactions] = useState([]);
             
-            const [newPurchase, setNewPurchase] = useState({ productId: '', quantity: '', costPrice: '', date: new Date().toISOString().split('T')[0] });
-            const [newSale, setNewSale] = useState({ productId: '', quantity: '', date: new Date().toISOString().split('T')[0] });
-            const [newTransaction, setNewTransaction] = useState({ type: 'entrada', description: '', amount: '', date: new Date().toISOString().split('T')[0] });
-            const [newProduct, setNewProduct] = useState({ nome: '', categoria: '', codigo: '', estoqueMinimo: 0, precoCusto: 0, precoVenda: 0, controlaEstoque: true });
+            const [newPurchase, setNewPurchase] = useState({ 
+                productId: '', 
+                quantity: '', 
+                costPrice: '', 
+                date: new Date().toISOString().split('T')[0] 
+            });
+            const [newSale, setNewSale] = useState({ 
+                productId: '', 
+                quantity: '', 
+                date: new Date().toISOString().split('T')[0] 
+            });
+            const [newTransaction, setNewTransaction] = useState({ 
+                type: 'entrada', 
+                description: '', 
+                amount: '', 
+                date: new Date().toISOString().split('T')[0] 
+            });
+            const [newProduct, setNewProduct] = useState({ 
+                nome: '', 
+                categoria: '', 
+                codigo: '', 
+                estoqueMinimo: 0, 
+                precoCusto: 0, 
+                precoVenda: 0, 
+                controlaEstoque: true 
+            });
 
-           // ✅ Passo 1 — Sistema de Alertas
-    const [alertBox, setAlertBox] = useState({
-      visible: false,
-      message: '',
-      type: 'info',
-      onConfirm: null,
-      confirmMode: false
-    });
+            // Sistema de Alertas
+            const [alertBox, setAlertBox] = useState({
+                visible: false,
+                message: '',
+                type: 'info',
+                onConfirm: null,
+                confirmMode: false
+            });
 
-    const showAlert = (message, type = 'info') => {
-      setAlertBox({ visible: true, message, type, confirmMode: false });
-      setTimeout(() => setAlertBox({ visible: false, message: '', type: 'info', confirmMode: false }), 2500);
-    };
+            const showAlert = useCallback((message, type = 'info') => {
+                setAlertBox({ visible: true, message, type, confirmMode: false, onConfirm: null });
+                setTimeout(() => setAlertBox({ 
+                    visible: false, 
+                    message: '', 
+                    type: 'info', 
+                    confirmMode: false, 
+                    onConfirm: null 
+                }), 2500);
+            }, []);
 
-    const showConfirm = (message, onConfirm) => {
-      setAlertBox({ visible: true, message, type: 'confirm', confirmMode: true, onConfirm });
-    };
+            const showConfirm = useCallback((message, onConfirm) => {
+                setAlertBox({ visible: true, message, type: 'confirm', confirmMode: true, onConfirm });
+            }, []);
 
-            // Carregar dados ao iniciar
+            // Carregar dados
             useEffect(() => {
                 loadAllData();
             }, []);
 
-            const loadAllData = async () => {
+            const loadAllData = useCallback(async () => {
                 try {
                     setLoading(true);
                     setError(null);
@@ -148,11 +172,118 @@
                     setError(err.message);
                     setLoading(false);
                 }
-            };
+            }, []);
 
-            const addProduct = async () => {
+            // Validação e edição de produtos
+            const handleProductEdit = useCallback(async (product, field, newValue) => {
+                // Verifica se o valor realmente mudou
+                if (product[field] == newValue) return;
+                
+                // VALIDAÇÕES POR CAMPO
+                if (field === 'nome') {
+                    if (!newValue || newValue.trim() === '') {
+                        showAlert("❌ O nome do produto não pode estar vazio!", "error");
+                        loadAllData();
+                        return;
+                    }
+                    if (newValue.trim().length < 3) {
+                        showAlert("❌ O nome deve ter pelo menos 3 caracteres!", "error");
+                        loadAllData();
+                        return;
+                    }
+                }
+                
+                if (field === 'codigo') {
+                    if (!newValue || newValue.trim() === '') {
+                        showAlert("❌ O código não pode estar vazio!", "error");
+                        loadAllData();
+                        return;
+                    }
+                    const codigoExiste = products.find(p => 
+                        p.id !== product.id && 
+                        p.codigo.toUpperCase() === newValue.toUpperCase()
+                    );
+                    if (codigoExiste) {
+                        showAlert("❌ Já existe um produto com este código!", "error");
+                        loadAllData();
+                        return;
+                    }
+                }
+                
+                if (field === 'categoria') {
+                    if (!newValue || newValue.trim() === '') {
+                        showAlert("❌ A categoria não pode estar vazia!", "error");
+                        loadAllData();
+                        return;
+                    }
+                }
+                
+                if (field === 'estoqueMinimo') {
+                    const valor = parseFloat(newValue);
+                    if (isNaN(valor) || valor < 0) {
+                        showAlert("❌ Estoque mínimo deve ser um número positivo!", "error");
+                        loadAllData();
+                        return;
+                    }
+                }
+                
+                if (field === 'precoVenda') {
+                    const valor = parseFloat(newValue);
+                    if (isNaN(valor) || valor < 0) {
+                        showAlert("❌ Preço de venda deve ser um número positivo!", "error");
+                        loadAllData();
+                        return;
+                    }
+                    if (valor === 0) {
+                        showAlert("⚠️ Atenção: Preço de venda está zerado!", "error");
+                        loadAllData();
+                        return;
+                    }
+                }
+                
+                const updatedValue = ['estoqueMinimo', 'precoVenda'].includes(field)
+                    ? parseFloat(newValue) || 0
+                    : (field === 'codigo' ? newValue.toUpperCase() : newValue.trim());
+
+                const updatedProduct = { ...product, [field]: updatedValue };
+
+                try {
+                    const response = await fetch(`${API_URL}?action=updateProduto`, {
+                        method: "POST",
+                        body: JSON.stringify(updatedProduct),
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showAlert("✅ Alteração salva com sucesso!", "success");
+                        loadAllData();
+                    } else {
+                        showAlert("⚠️ Falha ao atualizar o produto.", "error");
+                        loadAllData();
+                    }
+                } catch (err) {
+                    showAlert("❌ Erro ao atualizar: " + err.message, "error");
+                    loadAllData();
+                }
+            }, [products, showAlert, loadAllData]);
+
+            const addProduct = useCallback(async () => {
                 if (!newProduct.nome || !newProduct.categoria || !newProduct.codigo) {
-                    alert('Preencha nome, categoria e código!');
+                    showAlert('❌ Preencha nome, categoria e código!', 'error');
+                    return;
+                }
+
+                if (newProduct.nome.trim().length < 3) {
+                    showAlert('❌ O nome deve ter pelo menos 3 caracteres!', 'error');
+                    return;
+                }
+
+                const codigoExiste = products.find(p => 
+                    p.codigo.toUpperCase() === newProduct.codigo.toUpperCase()
+                );
+                if (codigoExiste) {
+                    showAlert('❌ Já existe um produto com este código!', 'error');
                     return;
                 }
                 
@@ -161,6 +292,9 @@
                         method: 'POST',
                         body: JSON.stringify({
                             ...newProduct,
+                            codigo: newProduct.codigo.toUpperCase(),
+                            nome: newProduct.nome.trim(),
+                            categoria: newProduct.categoria.trim(),
                             estoque: 0
                         })
                     });
@@ -169,7 +303,15 @@
                     
                     if (result.success) {
                         showAlert('✅ Produto cadastrado com sucesso!', 'success');
-                        setNewProduct({ nome: '', categoria: '', codigo: '', estoqueMinimo: 0, precoCusto: 0, precoVenda: 0, controlaEstoque: true });
+                        setNewProduct({ 
+                            nome: '', 
+                            categoria: '', 
+                            codigo: '', 
+                            estoqueMinimo: 0, 
+                            precoCusto: 0, 
+                            precoVenda: 0, 
+                            controlaEstoque: true 
+                        });
                         loadAllData();
                     } else {
                         showAlert('⚠️ Erro ao cadastrar produto.', 'error');
@@ -177,17 +319,27 @@
                 } catch (err) {
                     showAlert('❌ ' + err.message, 'error');
                 }
-            };
+            }, [newProduct, products, showAlert, loadAllData]);
 
-            const addPurchase = async () => {
+            const addPurchase = useCallback(async () => {
                 if (!newPurchase.productId || !newPurchase.quantity || !newPurchase.costPrice) {
-                    alert('Preencha todos os campos!');
+                    showAlert('❌ Preencha todos os campos!', 'error');
                     return;
                 }
                 
                 const product = products.find(p => p.id == newPurchase.productId);
                 const qty = parseInt(newPurchase.quantity);
                 const cost = parseFloat(newPurchase.costPrice);
+
+                if (qty <= 0) {
+                    showAlert('❌ Quantidade deve ser maior que zero!', 'error');
+                    return;
+                }
+
+                if (cost <= 0) {
+                    showAlert('❌ Preço de custo deve ser maior que zero!', 'error');
+                    return;
+                }
                 
                 try {
                     const response = await fetch(`${API_URL}?action=addCompra`, {
@@ -205,26 +357,36 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('Compra registrada!');
-                        setNewPurchase({ productId: '', quantity: '', costPrice: '', date: new Date().toISOString().split('T')[0] });
+                        showAlert('✅ Compra registrada com sucesso!', 'success');
+                        setNewPurchase({ 
+                            productId: '', 
+                            quantity: '', 
+                            costPrice: '', 
+                            date: new Date().toISOString().split('T')[0] 
+                        });
                         loadAllData();
                     }
                 } catch (err) {
                     showAlert('❌ ' + err.message, 'error');
                 }
-            };
+            }, [newPurchase, products, showAlert, loadAllData]);
 
-            const addSale = async () => {
+            const addSale = useCallback(async () => {
                 if (!newSale.productId || !newSale.quantity) {
-                    alert('Preencha todos os campos!');
+                    showAlert('❌ Preencha todos os campos!', 'error');
                     return;
                 }
                 
                 const product = products.find(p => p.id == newSale.productId);
                 const qty = parseInt(newSale.quantity);
+
+                if (qty <= 0) {
+                    showAlert('❌ Quantidade deve ser maior que zero!', 'error');
+                    return;
+                }
                 
                 if (product.controlaEstoque && product.estoque < qty) {
-                    alert('Estoque insuficiente!');
+                    showAlert('❌ Estoque insuficiente!', 'error');
                     return;
                 }
                 
@@ -247,18 +409,28 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        showAlert('✅ Venda registrada!', 'success');
-                        setNewSale({ productId: '', quantity: '', date: new Date().toISOString().split('T')[0] });
+                        showAlert('✅ Venda registrada com sucesso!', 'success');
+                        setNewSale({ 
+                            productId: '', 
+                            quantity: '', 
+                            date: new Date().toISOString().split('T')[0] 
+                        });
                         loadAllData();
                     }
                 } catch (err) {
-                    alert('Erro: ' + err.message);
+                    showAlert('❌ ' + err.message, 'error');
                 }
-            };
+            }, [newSale, products, showAlert, loadAllData]);
 
-            const addTransactionManual = async () => {
+            const addTransactionManual = useCallback(async () => {
                 if (!newTransaction.description || !newTransaction.amount) {
-                    alert('Preencha descrição e valor!');
+                    showAlert('❌ Preencha descrição e valor!', 'error');
+                    return;
+                }
+
+                const valor = parseFloat(newTransaction.amount);
+                if (isNaN(valor) || valor <= 0) {
+                    showAlert('❌ Valor deve ser um número positivo!', 'error');
                     return;
                 }
                 
@@ -267,8 +439,8 @@
                         method: 'POST',
                         body: JSON.stringify({
                             tipo: newTransaction.type,
-                            descricao: newTransaction.description,
-                            valor: parseFloat(newTransaction.amount),
+                            descricao: newTransaction.description.trim(),
+                            valor: valor,
                             data: newTransaction.date
                         })
                     });
@@ -276,55 +448,45 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        showAlert('✅ Transação registrada!', 'success');
-                        setNewTransaction({ type: 'entrada', description: '', amount: '', date: new Date().toISOString().split('T')[0] });
+                        showAlert('✅ Transação registrada com sucesso!', 'success');
+                        setNewTransaction({ 
+                            type: 'entrada', 
+                            description: '', 
+                            amount: '', 
+                            date: new Date().toISOString().split('T')[0] 
+                        });
                         loadAllData();
                     }
                 } catch (err) {
-                    alert('Erro: ' + err.message);
+                    showAlert('❌ ' + err.message, 'error');
                 }
-            };
-
-            const updateProductPrice = async (productId, field, value) => {
-    // ⛔ Bloqueia atualização se não estiver na aba de cadastro
-    if (activeTab !== "cadastro") return;
-
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    const updatedValue = ['estoqueMinimo', 'precoVenda'].includes(field)
-        ? parseFloat(value) || 0
-        : value;
-
-    const updatedProduct = { ...product, [field]: updatedValue };
-
-    try {
-        const response = await fetch(`${API_URL}?action=updateProduto`, {
-            method: "POST",
-            body: JSON.stringify(updatedProduct),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showAlert("✅ Alteração salva com sucesso!", "success");
-            loadAllData();
-        } else {
-            showAlert("⚠️ Falha ao atualizar o produto.", "error");
-        }
-    } catch (err) {
-        showAlert("❌ Erro ao atualizar: " + err.message, "error");
-    }
-};
+            }, [newTransaction, showAlert, loadAllData]);
 
             const stats = useMemo(() => {
-                const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
-                const totalExpenses = transactions.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
-                const totalProfit = sales.reduce((sum, s) => sum + parseFloat(s.lucro || 0), 0);
-                const stockValue = products.reduce((sum, p) => sum + (parseFloat(p.estoque || 0) * parseFloat(p.precoCusto || 0)), 0);
-                const lowStock = products.filter(p => p.controlaEstoque && parseFloat(p.estoque || 0) < parseFloat(p.estoqueMinimo || 0) && parseFloat(p.estoqueMinimo || 0) > 0);
+                const totalRevenue = transactions
+                    .filter(t => t.tipo === 'entrada')
+                    .reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
+                const totalExpenses = transactions
+                    .filter(t => t.tipo === 'saida')
+                    .reduce((sum, t) => sum + parseFloat(t.valor || 0), 0);
+                const totalProfit = sales
+                    .reduce((sum, s) => sum + parseFloat(s.lucro || 0), 0);
+                const stockValue = products
+                    .reduce((sum, p) => sum + (parseFloat(p.estoque || 0) * parseFloat(p.precoCusto || 0)), 0);
+                const lowStock = products.filter(p => 
+                    p.controlaEstoque && 
+                    parseFloat(p.estoque || 0) < parseFloat(p.estoqueMinimo || 0) && 
+                    parseFloat(p.estoqueMinimo || 0) > 0
+                );
                 
-                return { totalRevenue, totalExpenses, totalProfit, stockValue, lowStock, balance: totalRevenue - totalExpenses };
+                return { 
+                    totalRevenue, 
+                    totalExpenses, 
+                    totalProfit, 
+                    stockValue, 
+                    lowStock, 
+                    balance: totalRevenue - totalExpenses 
+                };
             }, [transactions, sales, products]);
 
             const salesByCategory = useMemo(() => {
@@ -340,7 +502,9 @@
                         byCategory[cat].revenue += parseFloat(sale.total || 0);
                     }
                 });
-                return Object.entries(byCategory).map(([name, data]) => ({ name, ...data }));
+                return Object.entries(byCategory)
+                    .map(([name, data]) => ({ name, ...data }))
+                    .sort((a, b) => b.revenue - a.revenue);
             }, [sales, products]);
 
             if (loading) {
@@ -380,7 +544,7 @@
                                 </div>
                                 <button
                                     onClick={loadAllData}
-                                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                                 >
                                     <icons.RefreshCw /> Atualizar
                                 </button>
@@ -481,166 +645,134 @@
                         )}
 
                         {activeTab === 'cadastro' && (
-  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-      <h3 className="text-2xl font-bold text-white mb-6">Cadastrar Novo Produto</h3>
+                            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                                <h3 className="text-2xl font-bold text-white mb-6">Cadastrar Novo Produto</h3>
 
-     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  <input
-    type="text"
-    placeholder="Nome do produto"
-    value={newProduct.nome}
-    onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="text"
-    placeholder="Categoria"
-    value={newProduct.categoria}
-    onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="text"
-    placeholder="Código"
-    value={newProduct.codigo}
-    onChange={(e) => setNewProduct({ ...newProduct, codigo: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="number"
-    step="1"
-    min="0"
-    placeholder="Estoque mínimo"
-    value={newProduct.estoqueMinimo}
-    onChange={(e) => setNewProduct({ ...newProduct, estoqueMinimo: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="number"
-    step="0.01"
-    placeholder="Preço de venda"
-    value={newProduct.precoVenda}
-    onChange={(e) => setNewProduct({ ...newProduct, precoVenda: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <button
-    onClick={addProduct}
-    className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 md:col-span-2"
-  >
-    <icons.Plus /> Cadastrar Produto
-  </button>
-</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <input
+                                        type="text"
+                                        placeholder="Nome do produto"
+                                        value={newProduct.nome}
+                                        onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Categoria"
+                                        value={newProduct.categoria}
+                                        onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Código"
+                                        value={newProduct.codigo}
+                                        onChange={(e) => setNewProduct({ ...newProduct, codigo: e.target.value.toUpperCase() })}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300 uppercase"
+                                    />
+                                    <input
+                                        type="number"
+                                        step="1"
+                                        min="0"
+                                        placeholder="Estoque mínimo"
+                                        value={newProduct.estoqueMinimo}
+                                        onChange={(e) => setNewProduct({ ...newProduct, estoqueMinimo: e.target.value })}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="Preço de venda"
+                                        value={newProduct.precoVenda}
+                                        onChange={(e) => setNewProduct({ ...newProduct, precoVenda: e.target.value })}
+                                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                                    />
+                                    <button
+                                        onClick={addProduct}
+                                        className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors md:col-span-2"
+                                    >
+                                        <icons.Plus /> Cadastrar Produto
+                                    </button>
+                                </div>
 
+                                <h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
+                                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+                                    {products.length > 0 ? (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm text-left text-purple-100">
+                                                <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                                                    <tr>
+                                                        <th className="px-4 py-3">Código</th>
+                                                        <th className="px-4 py-3">Produto</th>
+                                                        <th className="px-4 py-3">Categoria</th>
+                                                        <th className="px-4 py-3 text-center">Estoque Mínimo</th>
+                                                        <th className="px-4 py-3 text-center">Preço de Venda (R$)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {products.map((product) => (
+                                                        <tr
+                                                            key={product.id}
+                                                            className="border-b border-white/5 hover:bg-white/10 transition"
+                                                        >
+                                                            <td className="px-4 py-2 text-center">
+                                                                <input
+                                                                    type="text"
+                                                                    defaultValue={product.codigo || ""}
+                                                                    onBlur={(e) => handleProductEdit(product, "codigo", e.target.value)}
+                                                                    className="bg-white/20 text-white rounded p-1 w-20 text-center uppercase"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-2">
+                                                                <input
+                                                                    type="text"
+                                                                    defaultValue={product.nome || ""}
+                                                                    onBlur={(e) => handleProductEdit(product, "nome", e.target.value)}
+                                                                    className="bg-white/20 text-white rounded p-1 w-full"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-2 text-center">
+                                                                <input
+                                                                    type="text"
+                                                                    defaultValue={product.categoria || ""}
+                                                                    onBlur={(e) => handleProductEdit(product, "categoria", e.target.value)}
+                                                                    className="bg-white/20 text-white rounded p-1 w-32 text-center"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-2 text-center">
+                                                                <input
+                                                                    type="number"
+                                                                    step="1"
+                                                                    min="0"
+                                                                    defaultValue={product.estoqueMinimo || ""}
+                                                                    onBlur={(e) => handleProductEdit(product, "estoqueMinimo", e.target.value)}
+                                                                    className="bg-white/20 text-white rounded p-1 w-20 text-center"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-2 text-center">
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    defaultValue={product.precoVenda || ""}
+                                                                    onBlur={(e) => handleProductEdit(product, "precoVenda", e.target.value)}
+                                                                    className="bg-white/20 text-white rounded p-1 w-24 text-center"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <p className="text-purple-300 text-center py-6">Nenhum produto cadastrado ainda</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
-     {/* 👇 LISTAGEM DE PRODUTOS DEVE VIR AQUI, DENTRO DESTE MESMO DIV */}
-<h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
-<div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-  {products.length > 0 ? (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left text-purple-100">
-        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-          <tr>
-            <th className="px-4 py-3">Código</th>
-            <th className="px-4 py-3">Produto</th>
-            <th className="px-4 py-3">Categoria</th>
-            <th className="px-4 py-3 text-center">Estoque Mínimo</th>
-            <th className="px-4 py-3 text-center">Preço de Venda (R$)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr
-              key={product.id}
-              className="border-b border-white/5 hover:bg-white/10 transition"
-            >
-              {/* Código */}
-              <td className="px-4 py-2 text-center">
-                <input
-                  type="text"
-                  value={product.codigo || ""}
-                  onChange={(e) =>
-                    updateProductPrice(
-                      product.id,
-                      "codigo",
-                      e.target.value.toUpperCase()
-                    )
-                  }
-                  className="bg-white/20 text-white rounded p-1 w-20 text-center uppercase"
-                />
-              </td>
-
-              {/* Produto */}
-              <td className="px-4 py-2">
-                <input
-                  type="text"
-                  value={product.nome || ""}
-                  onChange={(e) =>
-                    updateProductPrice(product.id, "nome", e.target.value)
-                  }
-                  className="bg-white/20 text-white rounded p-1 w-full"
-                />
-              </td>
-
-              {/* Categoria */}
-              <td className="px-4 py-2 text-center">
-                <input
-                  type="text"
-                  value={product.categoria || ""}
-                  onChange={(e) =>
-                    updateProductPrice(product.id, "categoria", e.target.value)
-                  }
-                  className="bg-white/20 text-white rounded p-1 w-32 text-center"
-                />
-              </td>
-
-              {/* Estoque Mínimo */}
-              <td className="px-4 py-2 text-center">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={product.estoqueMinimo || ""}
-                  onChange={(e) =>
-                    updateProductPrice(
-                      product.id,
-                      "estoqueMinimo",
-                      e.target.value
-                    )
-                  }
-                  className="bg-white/20 text-white rounded p-1 w-20 text-center"
-                />
-              </td>
-
-              {/* Preço de Venda */}
-              <td className="px-4 py-2 text-center">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={product.precoVenda || ""}
-                  onChange={(e) =>
-                    updateProductPrice(
-                      product.id,
-                      "precoVenda",
-                      e.target.value
-                    )
-                  }
-                  className="bg-white/20 text-white rounded p-1 w-24 text-center"
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <p className="text-purple-300 text-center py-6">
-      Nenhum produto cadastrado ainda
-    </p>
-  )}
-</div>
-
-    {activeTab === 'vendas' && (
+                        {activeTab === 'vendas' && (
                             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                                 <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -671,7 +803,7 @@
                                     />
                                     <button
                                         onClick={addSale}
-                                        className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2"
+                                        className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors"
                                     >
                                         <icons.Plus /> Registrar
                                     </button>
@@ -737,7 +869,7 @@
                                     />
                                     <button
                                         onClick={addPurchase}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2"
+                                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors"
                                     >
                                         <icons.ShoppingCart /> Registrar
                                     </button>
@@ -789,24 +921,11 @@
                                                             </div>
                                                             <div>
                                                                 <p className="text-purple-300 text-xs">Custo Médio</p>
-                                                                <input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    value={product.precoCusto}
-                                                                    disabled
-                                                                    className="bg-gray-500/20 text-white rounded p-1 w-full text-sm cursor-not-allowed"
-                                                                />
+                                                                <p className="text-white font-semibold">R$ {parseFloat(product.precoCusto || 0).toFixed(2)}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-purple-300 text-xs">Preço Venda</p>
-                                                                <input
-  type="number"
-  step="0.01"
-  value={product.precoVenda}
-  disabled
-  className="bg-gray-500/20 text-white rounded p-1 w-full text-sm cursor-not-allowed"
-/>
-
+                                                                <p className="text-white font-semibold">R$ {parseFloat(product.precoVenda || 0).toFixed(2)}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-purple-300 text-xs">Margem</p>
@@ -878,7 +997,7 @@
                                     />
                                     <button
                                         onClick={addTransactionManual}
-                                        className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 md:col-span-5"
+                                        className="bg-purple-500 hover:bg-purple-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors md:col-span-5"
                                     >
                                         <icons.Plus /> Adicionar
                                     </button>
@@ -967,51 +1086,51 @@
                                 </div>
                             </div>
                         )}
-                    {/* Alerta/Confirmação Global */}
-{alertBox.visible && (
-  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-    <div className={`rounded-2xl shadow-lg p-6 w-80 text-center border 
-      ${alertBox.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-200' :
-        alertBox.type === 'success' ? 'bg-green-500/20 border-green-500 text-green-200' :
-        alertBox.type === 'confirm' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' :
-        'bg-purple-500/20 border-purple-500 text-purple-200'}
-    `}>
-      <p className="text-lg font-semibold mb-4">{alertBox.message}</p>
-      
-      {alertBox.confirmMode ? (
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => {
-              setAlertBox({ ...alertBox, visible: false });
-              if (alertBox.onConfirm) alertBox.onConfirm();
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-          >
-            Confirmar
-          </button>
-          <button
-            onClick={() => setAlertBox({ ...alertBox, visible: false })}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
-          >
-            Cancelar
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setAlertBox({ ...alertBox, visible: false })}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg"
-        >
-          OK
-        </button>
-      )}
-    </div>
-  </div>
-)}
 
+                        {/* Alerta/Confirmação Global */}
+                        {alertBox.visible && (
+                            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+                                <div className={`rounded-2xl shadow-lg p-6 w-80 text-center border 
+                                    ${alertBox.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-200' :
+                                    alertBox.type === 'success' ? 'bg-green-500/20 border-green-500 text-green-200' :
+                                    alertBox.type === 'confirm' ? 'bg-yellow-500/20 border-yellow-500 text-yellow-200' :
+                                    'bg-purple-500/20 border-purple-500 text-purple-200'}
+                                `}>
+                                    <p className="text-lg font-semibold mb-4">{alertBox.message}</p>
+                                    
+                                    {alertBox.confirmMode ? (
+                                        <div className="flex justify-center gap-4">
+                                            <button
+                                                onClick={() => {
+                                                    setAlertBox({ ...alertBox, visible: false });
+                                                    if (alertBox.onConfirm) alertBox.onConfirm();
+                                                }}
+                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                            >
+                                                Confirmar
+                                            </button>
+                                            <button
+                                                onClick={() => setAlertBox({ ...alertBox, visible: false })}
+                                                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setAlertBox({ ...alertBox, visible: false })}
+                                            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg transition-colors"
+                                        >
+                                            OK
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     
-                    <footer className="fixed bottom-0 left-0 w-full text-center text-xs text-purple-400/60 py-2">
-                        Crafted with ☕ by <span className="text-purple-200 font-semibold"> LCSBR </span> – 2025
+                    <footer className="fixed bottom-0 left-0 w-full text-center text-xs text-purple-400/60 py-2 bg-gradient-to-t from-slate-900/80 to-transparent">
+                        Crafted with ☕ by <span className="text-purple-200 font-semibold">LCSBR</span> – 2025
                     </footer>
                 </div>
             );
