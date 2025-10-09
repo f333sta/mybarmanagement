@@ -268,75 +268,75 @@
                 }
             }, [products, showAlert, loadAllData]);
 
-           const addProduct = useCallback(async () => {
-            const { nome, categoria, codigo, estoqueMinimo, precoVenda, controlaEstoque } = newProduct;
-
-              // Verifica se todos os campos estão preenchidos
-              if (!nome || !categoria || !codigo || estoqueMinimo === '' || precoVenda === '' || controlaEstoque === null) {
-                showAlert('❌ Preencha todos os campos do cadastro!', 'error');
-                return;
-              }
-            
-              if (nome.trim().length < 3) {
-                showAlert('❌ O nome deve ter pelo menos 3 caracteres!', 'error');
-                return;
-              }
-            
-              const estoqueMinimoNum = parseFloat(estoqueMinimo);
-              if (isNaN(estoqueMinimoNum) || estoqueMinimoNum < 0) {
-                showAlert('❌ Estoque mínimo deve ser um número válido e positivo!', 'error');
-                return;
-              }
-            
-              const precoVendaNum = parseFloat(precoVenda);
-              if (isNaN(precoVendaNum) || precoVendaNum <= 0) {
-                showAlert('❌ Preço de venda deve ser um número válido e maior que zero!', 'error');
-                return;
-              }
-            
-              const codigoExiste = products.find(p => 
-                p.codigo.toUpperCase() === codigo.toUpperCase()
-              );
-              if (codigoExiste) {
-                showAlert('❌ Já existe um produto com este código!', 'error');
-                return;
-                          
-              try {
-                const response = await fetch(`${API_URL}?action=addProduto`, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    ...newProduct,
-                    codigo: codigo.toUpperCase(),
-                    nome: nome.trim(),
-                    categoria: categoria.trim(),
-                    estoqueMinimo: estoqueMinimoNum,
-                    precoVenda: precoVendaNum,
-                    estoque: 0,
-                    controlaEstoque
-                  })
-                });
-            
-                const result = await response.json();
-            
-                if (result.success) {
-                  showAlert('✅ Produto cadastrado com sucesso!', 'success');
-                  setNewProduct({ 
-                    nome: '', 
-                    categoria: '', 
-                    codigo: '', 
-                    estoqueMinimo: 0, 
-                    precoCusto: 0, 
-                    precoVenda: 0, 
-                    controlaEstoque: true 
-                  });
-                  loadAllData();
-                } else {
-                  showAlert('⚠️ Erro ao cadastrar produto.', 'error');
-                }
-              } catch (err) {
-                showAlert('❌ ' + err.message, 'error');
-              }
-            }, [newProduct, products, showAlert, loadAllData]);
+                const addProduct = useCallback(async () => {
+                  const { nome, categoria, codigo, estoqueMinimo, precoVenda, controlaEstoque } = newProduct;
+                
+                  // Verifica se todos os campos estão preenchidos
+                  if (!nome || !categoria || !codigo || estoqueMinimo === '' || precoVenda === '' || typeof controlaEstoque === 'undefined') {
+                    showAlert('❌ Preencha todos os campos do cadastro!', 'error');
+                    return;
+                  }
+                
+                  if (nome.trim().length < 3) {
+                    showAlert('❌ O nome deve ter pelo menos 3 caracteres!', 'error');
+                    return;
+                  }
+                
+                  const estoqueMinimoNum = parseFloat(estoqueMinimo);
+                  if (isNaN(estoqueMinimoNum) || estoqueMinimoNum < 0) {
+                    showAlert('❌ Estoque mínimo deve ser um número válido e positivo!', 'error');
+                    return;
+                  }
+                
+                  const precoVendaNum = parseFloat(precoVenda);
+                  if (isNaN(precoVendaNum) || precoVendaNum <= 0) {
+                    showAlert('❌ Preço de venda deve ser um número válido e maior que zero!', 'error');
+                    return;
+                  }
+                
+                  const codigoExiste = products.find(p =>
+                    p.codigo && p.codigo.toUpperCase() === codigo.toUpperCase()
+                  );
+                  if (codigoExiste) {
+                    showAlert('❌ Já existe um produto com este código!', 'error');
+                    return;
+                  }
+                
+                  try {
+                    const response = await fetch(`${API_URL}?action=addProduto`, {
+                      method: 'POST',
+                      body: JSON.stringify({
+                        nome: nome.trim(),
+                        categoria: categoria.trim(),
+                        codigo: codigo.toUpperCase(),
+                        estoqueMinimo: estoqueMinimoNum,
+                        precoVenda: precoVendaNum,
+                        estoque: 0,
+                        controlaEstoque: !!controlaEstoque
+                      })
+                    });
+                
+                    const result = await response.json();
+                
+                    if (result.success) {
+                      showAlert('✅ Produto cadastrado com sucesso!', 'success');
+                      setNewProduct({
+                        nome: '',
+                        categoria: '',
+                        codigo: '',
+                        estoqueMinimo: 0,
+                        precoCusto: 0,
+                        precoVenda: 0,
+                        controlaEstoque: true
+                      });
+                      loadAllData();
+                    } else {
+                      showAlert('⚠️ Erro ao cadastrar produto.', 'error');
+                    }
+                  } catch (err) {
+                    showAlert('❌ ' + err.message, 'error');
+                  }
+                }, [newProduct, products, showAlert, loadAllData]);
                
                 try {
                     const response = await fetch(`${API_URL}?action=addProduto`, {
