@@ -301,43 +301,7 @@
                     showAlert('❌ Já existe um produto com este código!', 'error');
                     return;
                   }
-                
-                  try {
-                    const response = await fetch(`${API_URL}?action=addProduto`, {
-                      method: 'POST',
-                      body: JSON.stringify({
-                        nome: nome.trim(),
-                        categoria: categoria.trim(),
-                        codigo: codigo.toUpperCase(),
-                        estoqueMinimo: estoqueMinimoNum,
-                        precoVenda: precoVendaNum,
-                        estoque: 0,
-                        controlaEstoque: !!controlaEstoque
-                      })
-                    });
-                
-                    const result = await response.json();
-                
-                    if (result.success) {
-                      showAlert('✅ Produto cadastrado com sucesso!', 'success');
-                      setNewProduct({
-                        nome: '',
-                        categoria: '',
-                        codigo: '',
-                        estoqueMinimo: 0,
-                        precoCusto: 0,
-                        precoVenda: 0,
-                        controlaEstoque: true
-                      });
-                      loadAllData();
-                    } else {
-                      showAlert('⚠️ Erro ao cadastrar produto.', 'error');
-                    }
-                  } catch (err) {
-                    showAlert('❌ ' + err.message, 'error');
-                  }
-                }, [newProduct, products, showAlert, loadAllData]);
-               
+                              
                 try {
                     const response = await fetch(`${API_URL}?action=addProduto`, {
                         method: 'POST',
