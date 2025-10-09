@@ -482,51 +482,8 @@
 
       {/* FORMULÁRIO DE CADASTRO */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  <input
-    type="text"
-    placeholder="Nome do produto"
-    value={newProduct.nome}
-    onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="text"
-    placeholder="Categoria"
-    value={newProduct.categoria}
-    onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="text"
-    placeholder="Código"
-    value={newProduct.codigo}
-    onChange={(e) => setNewProduct({ ...newProduct, codigo: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="number"
-    step="1"
-    min="0"
-    placeholder="Estoque mínimo"
-    value={newProduct.estoqueMinimo}
-    onChange={(e) => setNewProduct({ ...newProduct, estoqueMinimo: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <input
-    type="number"
-    step="0.01"
-    placeholder="Preço de venda"
-    value={newProduct.precoVenda}
-    onChange={(e) => setNewProduct({ ...newProduct, precoVenda: e.target.value })}
-    className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-  />
-  <button
-    onClick={addProduct}
-    className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 md:col-span-2"
-  >
-    <icons.Plus /> Cadastrar Produto
-  </button>
-</div>
+          ...
+      </div>
 
       {/* 👇 LISTAGEM DE PRODUTOS DEVE VIR AQUI, DENTRO DESTE MESMO DIV */}
       <h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
