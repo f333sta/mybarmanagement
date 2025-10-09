@@ -15,6 +15,19 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* Remove as setas de todos os inputs numéricos */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield; /* para Firefox */
+    }
+  </style>
 </head>
 <body>
     <div id="root"></div>
@@ -519,81 +532,115 @@
 </div>
 
 
-      {/* 👇 LISTAGEM DE PRODUTOS DEVE VIR AQUI, DENTRO DESTE MESMO DIV */}
-      <h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-        {products.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-purple-100">
-              <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-                <tr>
-                  <th className="px-4 py-3">Código</th>
-                  <th className="px-4 py-3">Produto</th>
-                  <th className="px-4 py-3 text-center">Estoque Mínimo</th>
-                  <th className="px-4 py-3 text-center">Preço de Venda (R$)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b border-white/5 hover:bg-white/10 transition">
-                    <td className="px-4 py-2 text-center">
-                      <input
-                        type="text"
-                        value={product.codigo || ""}
-                        onChange={(e) =>
-                          updateProductPrice(product.id, "codigo", e.target.value.toUpperCase())
-                        }
-                        className="bg-white/20 text-white rounded p-1 w-20 text-center uppercase"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <input
-                        type="text"
-                        value={product.nome || ""}
-                        onChange={(e) =>
-                          updateProductPrice(product.id, "nome", e.target.value)
-                        }
-                        className="bg-white/20 text-white rounded p-1 w-full"
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <input
-                        type="number"
-                        step="1"
-                        min="0"
-                        value={product.estoqueMinimo || 0}
-                        onChange={(e) =>
-                          updateProductPrice(product.id, "estoqueMinimo", e.target.value)
-                        }
-                        className="bg-white/20 text-white rounded p-1 w-20 text-center"
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={product.precoVenda || 0}
-                        onChange={(e) =>
-                          updateProductPrice(product.id, "precoVenda", e.target.value)
-                        }
-                        className="bg-white/20 text-white rounded p-1 w-24 text-center"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-purple-300 text-center py-6">Nenhum produto cadastrado ainda</p>
-        )}
-      </div>
-  </div>
-)}
+     {/* 👇 LISTAGEM DE PRODUTOS DEVE VIR AQUI, DENTRO DESTE MESMO DIV */}
+<h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
+<div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+  {products.length > 0 ? (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left text-purple-100">
+        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+          <tr>
+            <th className="px-4 py-3">Código</th>
+            <th className="px-4 py-3">Produto</th>
+            <th className="px-4 py-3">Categoria</th>
+            <th className="px-4 py-3 text-center">Estoque Mínimo</th>
+            <th className="px-4 py-3 text-center">Preço de Venda (R$)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map((product) => (
+            <tr
+              key={product.id}
+              className="border-b border-white/5 hover:bg-white/10 transition"
+            >
+              {/* Código */}
+              <td className="px-4 py-2 text-center">
+                <input
+                  type="text"
+                  value={product.codigo || ""}
+                  onChange={(e) =>
+                    updateProductPrice(
+                      product.id,
+                      "codigo",
+                      e.target.value.toUpperCase()
+                    )
+                  }
+                  className="bg-white/20 text-white rounded p-1 w-20 text-center uppercase"
+                />
+              </td>
 
+              {/* Produto */}
+              <td className="px-4 py-2">
+                <input
+                  type="text"
+                  value={product.nome || ""}
+                  onChange={(e) =>
+                    updateProductPrice(product.id, "nome", e.target.value)
+                  }
+                  className="bg-white/20 text-white rounded p-1 w-full"
+                />
+              </td>
 
-                        {activeTab === 'vendas' && (
+              {/* Categoria */}
+              <td className="px-4 py-2 text-center">
+                <input
+                  type="text"
+                  value={product.categoria || ""}
+                  onChange={(e) =>
+                    updateProductPrice(product.id, "categoria", e.target.value)
+                  }
+                  className="bg-white/20 text-white rounded p-1 w-32 text-center"
+                />
+              </td>
+
+              {/* Estoque Mínimo */}
+              <td className="px-4 py-2 text-center">
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={product.estoqueMinimo || ""}
+                  onChange={(e) =>
+                    updateProductPrice(
+                      product.id,
+                      "estoqueMinimo",
+                      e.target.value
+                    )
+                  }
+                  className="bg-white/20 text-white rounded p-1 w-20 text-center"
+                />
+              </td>
+
+              {/* Preço de Venda */}
+              <td className="px-4 py-2 text-center">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={product.precoVenda || ""}
+                  onChange={(e) =>
+                    updateProductPrice(
+                      product.id,
+                      "precoVenda",
+                      e.target.value
+                    )
+                  }
+                  className="bg-white/20 text-white rounded p-1 w-24 text-center"
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p className="text-purple-300 text-center py-6">
+      Nenhum produto cadastrado ainda
+    </p>
+  )}
+</div>
+
+    {activeTab === 'vendas' && (
                             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                                 <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
