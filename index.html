@@ -90,6 +90,24 @@
             const [newTransaction, setNewTransaction] = useState({ type: 'entrada', description: '', amount: '', date: new Date().toISOString().split('T')[0] });
             const [newProduct, setNewProduct] = useState({ nome: '', categoria: '', codigo: '', estoqueMinimo: 0, precoCusto: 0, precoVenda: 0, controlaEstoque: true });
 
+           // ✅ Passo 1 — Sistema de Alertas
+    const [alertBox, setAlertBox] = useState({
+      visible: false,
+      message: '',
+      type: 'info',
+      onConfirm: null,
+      confirmMode: false
+    });
+
+    const showAlert = (message, type = 'info') => {
+      setAlertBox({ visible: true, message, type, confirmMode: false });
+      setTimeout(() => setAlertBox({ visible: false, message: '', type: 'info', confirmMode: false }), 2500);
+    };
+
+    const showConfirm = (message, onConfirm) => {
+      setAlertBox({ visible: true, message, type: 'confirm', confirmMode: true, onConfirm });
+    };
+
             // Carregar dados ao iniciar
             useEffect(() => {
                 loadAllData();
