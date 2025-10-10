@@ -348,292 +348,231 @@
 
         // Componente Atendente
         const AtendenteScreen = ({ onLogout }) => {
-        const [drinks, setDrinks] = useState([]);
-        const [pedidos, setPedidos] = useState([]);
-        const [novoPedido, setNovoPedido] = useState({ drinkId: "", cliente: "", drinkBusca: "" });
-        const [loading, setLoading] = useState(true);
-        const [mensagem, setMensagem] = useState("");
+        const [novoPedido, setNovoPedido] = React.useState({
+          cliente: "",
+          drinkId: null,
+          drinkBusca: "",
+        });
+        const [produtos, setProdutos] = React.useState([]);
+        const [pedidos, setPedidos] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
+        const [message, setMessage] = React.useState("");
+        const [messageType, setMessageType] = React.useState("success");
       
-        // Carregar dados periodicamente
-        useEffect(() => {
-          let ativo = true;
+        const showMessage = (msg, type = "info") => {
+          setMessage(msg);
+          setMessageType(type);
+          setTimeout(() => setMessage(""), 3000);
+        };
       
-          const carregarDados = async () => {
-            try {
-              const response = await fetch(`${API_URL}?action=getPedidosData`);
-              const data = await response.json();
-                            
-              if (!ativo) return;
-              
-              // A API retorna drinks já filtrados (apenas categoria "Drinks")
-              const drinks = data.drinks || [];
-              const pedidos = data.pedidos || [];
-              
-              setDrinks(drinks);
-              setPedidos(pedidos);
-              
-            } catch (err) {
-              console.error("❌ Erro ao carregar dados:", err);
-              setMensagem("❌ Erro ao carregar dados: " + err.message);
-            } finally {
-              if (ativo) setLoading(false);
-            }
-          };
+        const loadProdutos = async () => {
+          try {
+            const response = await fetch(`${API_URL}?action=getProdutos`);
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || "Erro ao carregar produtos");
+            setProdutos(data.produtos || []);
+          } catch (err) {
+            console.error(err);
+            showMessage("❌ Falha ao carregar produtos", "error");
+          }
+        };
       
-          carregarDados();
-          const interval = setInterval(carregarDados, 5000);
+        const loadPedidos = async () => {
+          try {
+            const response = await fetch(`${API_URL}?action=getPedidosData`);
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || "Erro ao carregar pedidos");
+            setPedidos(data.pedidos || []);
+          } catch (err) {
+            console.error(err);
+            showMessage("❌ Erro ao carregar pedidos", "error");
+          } finally {
+            setLoading(false);
+          }
+        };
       
-          return () => {
-            ativo = false;
-            clearInterval(interval);
-          };
+        React.useEffect(() => {
+          loadProdutos();
+          loadPedidos();
         }, []);
       
-        // Criar pedido
-        const criarPedido = async () => {
-          if (!novoPedido.drinkId || !novoPedido.cliente.trim()) {
-            setMensagem("⚠️ Preencha todos os campos!");
-            setTimeout(() => setMensagem(""), 3000);
+        const addPedido = React.useCallback(async () => {
+          if (!novoPedido.cliente || !novoPedido.drinkId) {
+            showMessage("❌ Informe o cliente e selecione o produto!", "error");
             return;
           }
-        
-          const drink = drinks.find((d) => d.id == novoPedido.drinkId);
-          
-          if (!drink) {
-            setMensagem("⚠️ Selecione um drink válido!");
-            setTimeout(() => setMensagem(""), 3000);
+      
+          const produtoSelecionado = produtos.find((p) => p.id == novoPedido.drinkId);
+          if (!produtoSelecionado) {
+            showMessage("⚠️ Produto não encontrado", "error");
             return;
           }
-        
+      
+          const pedidoPayload = {
+            cliente: novoPedido.cliente,
+            produto: {
+              id: produtoSelecionado.id,
+              nome: produtoSelecionado.nome,
+              codigo: produtoSelecionado.codigo,
+              preco: produtoSelecionado.precoVenda,
+            },
+            total: produtoSelecionado.precoVenda,
+            data: new Date().toLocaleString("pt-BR"),
+          };
+      
           try {
             const response = await fetch(`${API_URL}?action=addPedido`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                codigoDrink: drink.codigo || drink.id,
-                drink: drink.name,
-                cliente: novoPedido.cliente.trim(),
-              }),
+              body: JSON.stringify(pedidoPayload),
             });
-        
-            const result = await response.json();
-        
-            if (result.success) {
-              setMensagem(`✅ Pedido #${result.numeroPedido} criado!`);
-              setNovoPedido({ drinkId: "", cliente: "", drinkBusca: "" });
-        
-              const resp2 = await fetch(`${API_URL}?action=getPedidosData`);
-              const data2 = await resp2.json();
-              setDrinks(data2.drinks || []);
-              setPedidos(data2.pedidos || []);
-        
-              setTimeout(() => setMensagem(""), 4000);
+            const data = await response.json();
+      
+            if (data.success) {
+              showMessage("✅ Pedido cadastrado com sucesso!", "success");
+              setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
+              loadPedidos();
             } else {
-              setMensagem("❌ Erro: " + (result.error || ''));
-              setTimeout(() => setMensagem(""), 4000);
+              showMessage(`⚠️ ${data.error || "Erro ao cadastrar pedido"}`, "error");
             }
           } catch (err) {
-            console.error("Erro:", err);
-            setMensagem(`❌ ${err.message}`);
-            setTimeout(() => setMensagem(""), 4000);
+            console.error(err);
+            showMessage("❌ Erro ao conectar com o servidor", "error");
           }
-        };
+        }, [novoPedido, produtos]);
       
-        // Filtro de pedidos pendentes
-        const pedidosPendentes = pedidos.filter(
-          (p) => p.status === "pendente" || p.status === "em_preparo"
-        );
-      
-        if (loading) {
+        if (loading)
           return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 flex items-center justify-center">
-              <div className="text-white text-2xl">Carregando...</div>
+            <div className="min-h-screen flex items-center justify-center">
+              <span className="text-white text-2xl">Carregando...</span>
             </div>
           );
-        }
       
         return (
-          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 p-4">
-            <div className="max-w-2xl mx-auto">
-              {/* Header */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h1 className="text-2xl font-bold text-white">📋 Atendente</h1>
-                    <p className="text-green-200 text-sm">Cadastro de Pedidos</p>
-                  </div>
-                  <button
-                    onClick={onLogout}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <icons.LogOut /> Sair
-                  </button>
-                </div>
+          <div className="min-h-screen pb-10 p-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-white">☕ Atendente</h1>
+                <button
+                  onClick={onLogout}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <icons.LogOut /> Sair
+                </button>
               </div>
       
-              {/* Novo Pedido */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4 border border-white/20">
-                <h2 className="text-xl font-bold text-white mb-4">Novo Pedido</h2>
-                
-                {drinks.length === 0 && !loading && (
-                  <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-3 mb-4 text-yellow-200 text-center">
-                    ⚠️ Nenhum drink cadastrado. Cadastre produtos com categoria "Drinks" ou "Doses" no sistema.
-                  </div>
-                )}
+              {message && (
+                <div
+                  className={`mb-4 p-3 rounded-lg ${
+                    messageType === "success"
+                      ? "bg-green-500/20 text-green-200"
+                      : "bg-red-500/20 text-red-200"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
       
-                <div className="space-y-3 relative">
-                  {/* Campo de busca de drinks */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Digite o nome ou código do drink..."
-                      value={novoPedido.drinkBusca}
-                      onChange={(e) =>
-                        setNovoPedido({ ...novoPedido, drinkBusca: e.target.value })
-                      }
-                      className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
-                    />
-                  
-                    {novoPedido.drinkBusca && (
-                      <div className="absolute z-10 w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg mt-1 max-h-56 overflow-y-auto">
-                        {drinks
-                          .filter((d) => {
-                            const busca = (novoPedido.drinkBusca || "").toLowerCase().trim();
-                            const nome = (d.name || "").toLowerCase().trim();
-                            const codigo = (d.codigo || "").toString().toLowerCase().trim();
-                            return nome.includes(busca) || codigo.includes(busca);
-                          })
-                          .slice(0, 10)
-                          .map((d) => (
-                            <button
-                              key={d.id}
-                              onClick={() =>
-                                setNovoPedido({
-                                  ...novoPedido,
-                                  drinkId: d.id,
-                                  drinkBusca: `${d.name} (${d.codigo})`,
-                                })
-                              }
-                              className="block w-full text-left px-4 py-2 hover:bg-green-500/30 text-white"
-                            >
-                              <span className="font-semibold">{d.name}</span>{" "}
-                              <span className="text-green-200">({d.codigo})</span>
-                            </button>
-                          ))}
-                  
-                        {drinks.filter((d) => {
-                          const busca = (novoPedido.drinkBusca || "").toLowerCase().trim();
-                          const nome = (d.name || "").toLowerCase().trim();
-                          const codigo = (d.codigo || "").toString().toLowerCase().trim();
-                          return nome.includes(busca) || codigo.includes(busca);
-                        }).length === 0 && (
-                          <div className="px-4 py-2 text-green-200 text-sm">
-                            Nenhum drink encontrado
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-      
-                  {/* Campo de cliente */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6">
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Novo Pedido
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <input
                     type="text"
-                    placeholder="Nome do Cliente"
+                    placeholder="Nome do cliente"
                     value={novoPedido.cliente}
                     onChange={(e) =>
                       setNovoPedido({ ...novoPedido, cliente: e.target.value })
                     }
-                    className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
+                    className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
                   />
-      
-                  {/* Mensagem */}
-                  {mensagem && (
-                    <div className="text-center text-green-300 font-semibold mb-2">
-                      {mensagem}
-                    </div>
-                  )}
-      
-                  {/* Botão Criar */}
-                  <button
-                    onClick={criarPedido}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 font-bold text-lg flex items-center justify-center gap-2"
-                  >
-                    <icons.Plus /> Criar Pedido
-                  </button>
+                  <input
+                    type="text"
+                    placeholder="Buscar produto"
+                    value={novoPedido.drinkBusca}
+                    onChange={(e) =>
+                      setNovoPedido({ ...novoPedido, drinkBusca: e.target.value })
+                    }
+                    className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
+                  />
                 </div>
+      
+                {/* Lista de produtos filtrados */}
+                {novoPedido.drinkBusca && (
+                  <div className="bg-white/10 rounded-lg p-4 border border-white/20 max-h-60 overflow-y-auto mb-4">
+                    {produtos
+                      .filter((p) =>
+                        p.nome
+                          .toLowerCase()
+                          .includes(novoPedido.drinkBusca.toLowerCase())
+                      )
+                      .map((p) => (
+                        <div
+                          key={p.id}
+                          onClick={() =>
+                            setNovoPedido({
+                              ...novoPedido,
+                              drinkId: p.id,
+                              drinkBusca: `${p.nome} (${p.codigo})`,
+                            })
+                          }
+                          className="p-2 hover:bg-white/20 rounded cursor-pointer text-purple-200"
+                        >
+                          {p.nome} ({p.codigo}) — R$ {p.precoVenda}
+                        </div>
+                      ))}
+                  </div>
+                )}
+      
+                <button
+                  onClick={addPedido}
+                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+                >
+                  <icons.Plus /> Registrar Pedido
+                </button>
               </div>
       
-              {/* Fila de Pedidos */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">
-                    Fila de Pedidos ({pedidosPendentes.length})
-                  </h2>
-                  <button
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const resp = await fetch(`${API_URL}?action=getPedidosData`);
-                        const d = await resp.json();
-                        setDrinks(d.drinks || []);
-                        setPedidos(d.pedidos || []);
-                      } catch (e) {
-                        console.error(e);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className="text-white hover:text-green-300"
-                  >
-                    <icons.RefreshCw />
-                  </button>
-                </div>
-      
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {pedidosPendentes.length > 0 ? (
-                    pedidosPendentes.map((pedido) => (
-                      <div
-                        key={pedido.id}
-                        className={`rounded-lg p-4 ${
-                          pedido.status === "em_preparo"
-                            ? "bg-yellow-500/20 border border-yellow-500"
-                            : "bg-white/5 border border-white/20"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-2xl font-bold text-white">
-                              #{pedido.numeroPedido}
-                            </div>
-                            <div className="text-lg text-white font-semibold">
-                              {pedido.drink}
-                            </div>
-                            <div className="text-green-200">
-                              Cliente: {pedido.cliente}
-                            </div>
-                            <div className="text-green-300 text-sm flex items-center gap-1 mt-1">
-                              <icons.Clock /> {pedido.horaAbertura}
-                            </div>
-                          </div>
-                          <div
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              pedido.status === "em_preparo"
-                                ? "bg-yellow-500 text-black"
-                                : "bg-blue-500 text-white"
-                            }`}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                <h3 className="text-2xl font-bold text-white mb-6">
+                  Pedidos Cadastrados
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-purple-100">
+                    <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                      <tr>
+                        <th className="px-4 py-3">Cliente</th>
+                        <th className="px-4 py-3">Produto</th>
+                        <th className="px-4 py-3">Código</th>
+                        <th className="px-4 py-3">Total</th>
+                        <th className="px-4 py-3">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pedidos.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="text-center py-6 text-purple-300"
                           >
-                            {pedido.status === "em_preparo"
-                              ? "Em Preparo"
-                              : "Pendente"}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-green-300 text-center py-8">
-                      Nenhum pedido pendente
-                    </p>
-                  )}
+                            Nenhum pedido ainda
+                          </td>
+                        </tr>
+                      ) : (
+                        pedidos.map((p, i) => (
+                          <tr key={i} className="border-b border-white/5">
+                            <td className="px-4 py-2">{p.cliente}</td>
+                            <td className="px-4 py-2">{p.produtoNome}</td>
+                            <td className="px-4 py-2">{p.codigo}</td>
+                            <td className="px-4 py-2">
+                              R$ {parseFloat(p.total || 0).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-2">{p.data}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
