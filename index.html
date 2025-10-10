@@ -1817,38 +1817,29 @@
             );
         };
 
-        const App = () => {
-          const [role, setRole] = React.useState(null);
+        <script type="text/babel">
+          const App = () => {
+            const [userRole, setUserRole] = React.useState(null);
         
-          const handleLogin = (perfil) => {
-            setRole(perfil);
+            const handleLogin = (role) => setUserRole(role);
+            const handleLogout = () => setUserRole(null);
+        
+            if (!userRole) return <LoginScreen onLogin={handleLogin} />;
+        
+            switch (userRole) {
+              case 'atendente':
+                return <AtendenteScreen onLogout={handleLogout} />;
+              case 'barista':
+                return <BaristaScreen onLogout={handleLogout} />;
+              case 'manager':
+                return <BarManagementSystem />;
+              default:
+                return <LoginScreen onLogin={handleLogin} />;
+            }
           };
         
-          const handleLogout = () => {
-            setRole(null);
-          };
-        
-          if (!role) {
-            return <LoginScreen onLogin={handleLogin} />;
-          }
-        
-          if (role === "atendente") {
-            return <AtendenteScreen onLogout={handleLogout} />;
-          }
-        
-          if (role === "barista") {
-            return <BaristaScreen onLogout={handleLogout} />;
-          }
-        
-          if (role === "manager") {
-            return <BarManagementSystem onLogout={handleLogout} />;
-          }
-        
-          return null;
-        };
-        
-        ReactDOM.render(<App />, document.getElementById('root'));
-
-    </script>
+          ReactDOM.render(<App />, document.getElementById('root'));
+        </script>
+  
 </body>
 </html>
