@@ -1741,7 +1741,38 @@
             );
         };
 
-        ReactDOM.render(<BarManagementSystem />, document.getElementById('root'));
+        const App = () => {
+          const [role, setRole] = React.useState(null);
+        
+          const handleLogin = (perfil) => {
+            setRole(perfil);
+          };
+        
+          const handleLogout = () => {
+            setRole(null);
+          };
+        
+          if (!role) {
+            return <LoginScreen onLogin={handleLogin} />;
+          }
+        
+          if (role === "atendente") {
+            return <AtendenteScreen onLogout={handleLogout} />;
+          }
+        
+          if (role === "barista") {
+            return <BaristaScreen onLogout={handleLogout} />;
+          }
+        
+          if (role === "manager") {
+            return <BarManagementSystem onLogout={handleLogout} />;
+          }
+        
+          return null;
+        };
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+
     </script>
 </body>
 </html>
