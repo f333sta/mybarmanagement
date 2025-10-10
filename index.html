@@ -415,10 +415,10 @@
           const addPedido = async () => {
             if (!novoPedido.cliente || !novoPedido.drinkId)
               return showMessage("⚠️ Informe o cliente e selecione o produto!", "error");
-        
+          
             const prod = produtos.find((p) => p.id == novoPedido.drinkId);
             if (!prod) return showMessage("❌ Produto não encontrado", "error");
-        
+          
             const payload = {
               cliente: novoPedido.cliente,
               produto: {
@@ -430,7 +430,9 @@
               total: prod.precoVenda,
               data: new Date().toLocaleString("pt-BR"),
             };
-        
+          
+            console.log("Payload a ser enviado:", payload);
+          
             try {
               const r = await fetch(`${API_URL}?action=addPedido`, {
                 method: "POST",
@@ -438,12 +440,17 @@
                 body: JSON.stringify(payload),
               });
               const d = await r.json();
+              console.log("Resposta da API:", d);
+          
               if (d.success) {
                 showMessage("✅ Pedido cadastrado com sucesso!", "success");
                 setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
                 loadPedidos();
-              } else showMessage("⚠️ Erro ao cadastrar pedido", "error");
-            } catch {
+              } else {
+                showMessage("⚠️ Erro ao cadastrar pedido", "error");
+              }
+            } catch (e) {
+              console.error("Erro ao conectar ao servidor:", e);
               showMessage("❌ Erro ao conectar ao servidor", "error");
             }
           };
