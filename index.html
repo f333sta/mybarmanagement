@@ -365,17 +365,40 @@
           setTimeout(() => setMessage(""), 3000);
         };
       
-        const loadProdutos = async () => {
-          try {
-            const response = await fetch(`${API_URL}?action=getProdutos`);
-            const data = await response.json();
-            if (!response.ok || data.error) throw new Error(data.error || "Erro ao carregar produtos");
-            setProdutos(data.produtos || []);
-          } catch (err) {
-            console.error(err);
-            showMessage("❌ Falha ao carregar produtos", "error");
+        useEffect(() => {
+          async function loadProdutos() {
+            try {
+              const response = await fetch(`${API_URL}?action=getProdutos`);
+              
+              if (!response.ok) {
+                throw new Error("Falha na conexão com o servidor");
+              }
+        
+              const data = await response.json();
+              
+              if (data.error) {
+                console.error("❌ Erro retornado pela API:", data.error);
+                setAlertBox({
+                  visible: true,
+                  message: "Erro ao carregar produtos: " + data.error,
+                  type: "error"
+                });
+                return;
+              }
+        
+              setProdutos(data.produtos || []);
+            } catch (err) {
+              console.error("❌ Erro no loadProdutos:", err);
+              setAlertBox({
+                visible: true,
+                message: "Erro ao conectar à API: " + err.message,
+                type: "error"
+              });
+            }
           }
-        };
+        
+          loadProdutos();
+        }, []);
       
         const loadPedidos = async () => {
           try {
