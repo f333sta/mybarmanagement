@@ -207,10 +207,10 @@
             try {
               setLoading(true);
             
-              // A API espera POST com action no parâmetro da URL
+              console.log('🔐 Tentando login com:', { usuario: username, senha: '***' });
+            
               const response = await fetch(`${API_URL}?action=login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   usuario: username.trim(),
                   senha: password.trim(),
@@ -218,15 +218,17 @@
               });
             
               const result = await response.json();
-              console.log('Login result:', result);
+              console.log('📥 Resposta do servidor:', result);
             
               if (result.success) {
+                console.log('✅ Login bem-sucedido!');
                 onLogin('manager');
               } else {
+                console.log('❌ Login falhou:', result.message);
                 setError(result.message || 'Usuário ou senha incorretos.');
               }
             } catch (err) {
-              console.error('Erro de login:', err);
+              console.error('💥 Erro de login:', err);
               setError('Erro ao conectar com o servidor. Verifique sua conexão.');
             } finally {
               setLoading(false);
@@ -364,17 +366,16 @@
               const response = await fetch(`${API_URL}?action=getPedidosData`);
               const data = await response.json();
               
-              console.log('✅ Dados recebidos da API:', data);
+              console.log('✅ Dados recebidos:', data);
               
               if (!ativo) return;
               
-              // A API retorna: { pedidos: [...], drinks: [...] }
-              // drinks já vem filtrado pela categoria "Drinks" ou "Doses"
+              // A API retorna drinks já filtrados (apenas categoria "Drinks")
               const drinks = data.drinks || [];
               const pedidos = data.pedidos || [];
               
-              console.log('✅ Drinks encontrados:', drinks.length);
-              console.log('✅ Pedidos encontrados:', pedidos.length);
+              console.log(`✅ ${drinks.length} drinks encontrados (categoria "Drinks")`);
+              console.log('Drinks:', drinks.map(d => d.nome).join(', '));
               
               setDrinks(drinks);
               setPedidos(pedidos);
