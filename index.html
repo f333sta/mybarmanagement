@@ -359,24 +359,56 @@
           const [message, setMessage] = React.useState("");
           const [messageType, setMessageType] = React.useState("success");
         
+          // Mensagens de feedback
           const showMessage = (msg, type = "info") => {
             setMessage(msg);
             setMessageType(type);
-            setTimeout(() => setMessage(""), 3000);
+            setTimeout(() => setMessage(""), 3500);
           };
         
-          // Carrega produtos e pedidos
+          // ========== Carregamento de dados ==========
           const loadProdutos = async () => {
             try {
               const response = await fetch(`${API_URL}?action=getProdutos`);
-              if (!response.ok) throw new Error("Falha ao conectar à API");
-        
+              if (!response.ok) throw new Error("Falha ao conectar com a API");
               const data = await response.json();
-              if (data.error) throw new Error(data.error);
         
-              setProdutos(data.produtos || []);
+              // Normaliza campos (segurança contra undefined / nome de campo diferente)
+              const raw = data.produtos || [];
+              const normalized = raw.map((p, i) => {
+                if (!p || typeof p !== "object") {
+                  console.warn("Produto inválido no índice", i, p);
+                  return {
+                    id: "",
+                    nome: "",
+                    codigo: "",
+                    categoria: "",
+                    precoVenda: 0,
+                    estoque: 0,
+                    estoqueMinimo: 0,
+                    controlaEstoque: true,
+                  };
+                }
+        
+                const nome =
+                  p.nome ??
+                  p.Nome ??
+                  p.name ??
+                  p.produtoNome ??
+                  p.produto_nome ??
+                  "";
+                const codigo = p.codigo ?? p.Codigo ?? p.code ?? "";
+                const categoria = p.categoria ?? p.Categoria ?? p.category ?? "";
+                const precoVenda =
+                  Number(p.precoVenda ?? p.PrecoVenda ?? p.preco ?? p.price ?? 0) || 0;
+        
+                return { ...p, nome, codigo, categoria, precoVenda };
+              });
+        
+              setProdutos(normalized);
             } catch (err) {
-              console.error("Erro ao carregar produtos:", err);
+              console.error("Erro loadProdutos:", err);
+              setProdutos([]);
               showMessage("❌ Erro ao carregar produtos", "error");
             }
           };
@@ -384,11 +416,11 @@
           const loadPedidos = async () => {
             try {
               const response = await fetch(`${API_URL}?action=getPedidosData`);
+              if (!response.ok) throw new Error("Falha ao conectar com a API");
               const data = await response.json();
-              if (!response.ok || data.error) throw new Error(data.error);
               setPedidos(data.pedidos || []);
             } catch (err) {
-              console.error(err);
+              console.error("Erro ao carregar pedidos:", err);
               showMessage("❌ Erro ao carregar pedidos", "error");
             } finally {
               setLoading(false);
@@ -400,8 +432,8 @@
             loadPedidos();
           }, []);
         
-          // Registrar novo pedido
-          const addPedido = React.useCallback(async () => {
+          // ========== Registrar novo pedido ==========
+          const addPedido = async () => {
             if (!novoPedido.cliente || !novoPedido.drinkId) {
               showMessage("⚠️ Informe o cliente e selecione o produto!", "error");
               return;
@@ -444,19 +476,21 @@
               console.error(err);
               showMessage("❌ Erro ao conectar ao servidor", "error");
             }
-          }, [novoPedido, produtos]);
+          };
         
+          // ========== Telas de Loading e Erro ==========
           if (loading)
             return (
-              <div className="min-h-screen flex items-center justify-center text-white text-2xl">
+              <div className="min-h-screen flex items-center justify-center text-white text-2xl bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
                 Carregando...
               </div>
             );
         
-          // ========== INTERFACE ==========
+          // ========== Render principal ==========
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pb-10 p-4">
               <div className="max-w-6xl mx-auto">
+                {/* Cabeçalho */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
                   <h1 className="text-3xl font-bold text-white">☕ Atendente</h1>
                   <button
@@ -467,6 +501,7 @@
                   </button>
                 </div>
         
+                {/* Mensagens */}
                 {message && (
                   <div
                     className={`mb-4 p-3 rounded-lg text-center ${
@@ -479,7 +514,7 @@
                   </div>
                 )}
         
-                {/* Cadastro de novo pedido */}
+                {/* Formulário novo pedido */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6">
                   <h3 className="text-2xl font-bold text-white mb-4">Novo Pedido</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -503,21 +538,20 @@
                     />
                   </div>
         
-                  {/* Lista de produtos filtrados — apenas Drinks */}
+                  {/* Lista de produtos (somente categoria Drinks) */}
                   {novoPedido.drinkBusca && (
                     <div className="bg-white/10 rounded-lg p-4 border border-white/20 max-h-60 overflow-y-auto mb-4">
                       {produtos
-                        .filter(
-                          (p) =>
-                            p.categoria &&
-                            p.categoria.toLowerCase() === "drinks" &&
-                            p.nome
-                              .toLowerCase()
-                              .includes(novoPedido.drinkBusca.toLowerCase())
-                        )
+                        .filter((p) => {
+                          if (!p || typeof p !== "object") return false;
+                          const categoria = String(p.categoria || "").toLowerCase();
+                          const nome = String(p.nome || "").toLowerCase();
+                          const busca = String(novoPedido.drinkBusca || "").toLowerCase();
+                          return categoria === "drinks" && nome.includes(busca);
+                        })
                         .map((p) => (
                           <div
-                            key={p.id}
+                            key={p.id || `${p.codigo}-${p.nome}`}
                             onClick={() =>
                               setNovoPedido({
                                 ...novoPedido,
@@ -588,7 +622,6 @@
             </div>
           );
         };
-
         // Componente Barista
         const BaristaScreen = ({ onLogout }) => {
           const [pedidos, setPedidos] = useState([]);
