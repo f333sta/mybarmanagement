@@ -507,29 +507,40 @@
         
                   {novoPedido.drinkBusca && (
                     <div className="bg-white/10 rounded-lg p-4 border border-white/20 max-h-60 overflow-y-auto mb-4">
-                      {produtos
-                        .filter((p) => {
-                          if (!p || typeof p !== "object") return false;
-                          const categoria = String(p.categoria || "").toLowerCase();
-                          const nome = String(p.nome || "").toLowerCase();
-                          const busca = String(novoPedido.drinkBusca || "").toLowerCase();
-                          return categoria === "drinks" && nome.includes(busca);
-                        })
-                        .map((p) => (
-                          <div
-                            key={p.id || `${p.codigo}-${p.nome}`}
-                            onClick={() =>
-                              setNovoPedido({
-                                ...novoPedido,
-                                drinkId: p.id,
-                                drinkBusca: `${p.nome} (${p.codigo})`,
-                              })
-                            }
-                            className="p-2 hover:bg-white/20 rounded cursor-pointer text-purple-200"
-                          >
-                            {p.nome} ({p.codigo}) — R$ {p.precoVenda}
-                          </div>
-                        ))}
+                      {Array.isArray(produtos)
+                        ? produtos
+                            .filter((p, i) => {
+                              if (!p || typeof p !== "object") {
+                                console.warn("⚠️ Produto inválido na posição", i, p);
+                                return false;
+                              }
+                  
+                              try {
+                                const categoria = String(p.categoria ?? "").toLowerCase();
+                                const nome = String(p.nome ?? "").toLowerCase();
+                                const busca = String(novoPedido.drinkBusca ?? "").toLowerCase();
+                                return categoria === "drinks" && nome.includes(busca);
+                              } catch (e) {
+                                console.error("Erro ao processar produto:", p, e);
+                                return false;
+                              }
+                            })
+                            .map((p, i) => (
+                              <div
+                                key={p.id || `${p.codigo}-${p.nome}-${i}`}
+                                onClick={() =>
+                                  setNovoPedido({
+                                    ...novoPedido,
+                                    drinkId: p.id,
+                                    drinkBusca: `${p.nome} (${p.codigo})`,
+                                  })
+                                }
+                                className="p-2 hover:bg-white/20 rounded cursor-pointer text-purple-200"
+                              >
+                                {p.nome} ({p.codigo}) — R$ {p.precoVenda}
+                              </div>
+                            ))
+                        : null}
                     </div>
                   )}
         
