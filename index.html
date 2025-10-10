@@ -121,11 +121,30 @@
                     return;
                 }
 
-                if (selectedProfile === 'manager') {
-                    if (password !== '1234') {
-                        setError('Senha incorreta!');
-                        return;
+                const fazerLogin = async () => {
+                  if (!usuario.trim() || !senha.trim()) {
+                    alert('Preencha usuário e senha.');
+                    return;
+                  }
+                
+                  try {
+                    const response = await fetch(`${API_URL}?action=login`, {
+                      method: 'POST',
+                      body: JSON.stringify({ usuario, senha }),
+                    });
+                    const result = await response.json();
+                
+                    if (result.success) {
+                      alert(`Bem-vindo, ${result.nome}!`);
+                      setTela('manager');
+                    } else {
+                      alert(result.message || 'Usuário ou senha incorretos.');
                     }
+                  } catch (err) {
+                    alert('Erro ao conectar com o servidor: ' + err.message);
+                  }
+                };
+
                 }
 
                 onLogin(selectedProfile);
@@ -254,6 +273,11 @@
                 }
 
                 const drink = drinks.find(d => d.id == novoPedido.drinkId);
+                if (!drink) {
+                  alert("Selecione um drink válido!");
+                  return;
+                }
+
                 
                 try {
                     const response = await fetch(`${API_URL}?action=addPedido`, {
@@ -308,35 +332,79 @@
                         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4 border border-white/20">
                             <h2 className="text-xl font-bold text-white mb-4">Novo Pedido</h2>
                             
-                            <div className="space-y-3">
-                                <select
-                                    value={novoPedido.drinkId}
-                                    onChange={(e) => setNovoPedido({...novoPedido, drinkId: e.target.value})}
-                                    className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 text-lg"
-                                >
-                                    <option value="">Selecione o Drink</option>
-                                    {drinks.map(d => (
-                                        <option key={d.id} value={d.id} className="text-black">
-                                            {d.nome} ({d.codigo})
-                                        </option>
+                          <div className="space-y-3 relative">
+                            {/* Campo de busca de drinks com autocomplete */}
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder="Digite o nome ou código do drink..."
+                                value={novoPedido.drinkBusca || ""}
+                                onChange={(e) =>
+                                  setNovoPedido({ ...novoPedido, drinkBusca: e.target.value })
+                                }
+                                className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
+                              />
+                          
+                              {/* Lista suspensa com sugestões */}
+                              {novoPedido.drinkBusca && (
+                                <div className="absolute z-10 w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg mt-1 max-h-56 overflow-y-auto">
+                                  {drinks
+                                    .filter(
+                                      (d) =>
+                                        d.nome.toLowerCase().includes(novoPedido.drinkBusca.toLowerCase()) ||
+                                        d.codigo.toLowerCase().includes(novoPedido.drinkBusca.toLowerCase())
+                                    )
+                                    .slice(0, 10)
+                                    .map((d) => (
+                                      <button
+                                        key={d.id}
+                                        onClick={() =>
+                                          setNovoPedido({
+                                            ...novoPedido,
+                                            drinkId: d.id,
+                                            drinkBusca: `${d.nome} (${d.codigo})`,
+                                          })
+                                        }
+                                        className="block w-full text-left px-4 py-2 hover:bg-green-500/30 text-white"
+                                      >
+                                        <span className="font-semibold">{d.nome}</span>{" "}
+                                        <span className="text-green-200">({d.codigo})</span>
+                                      </button>
                                     ))}
-                                </select>
-
-                                <input
-                                    type="text"
-                                    placeholder="Nome do Cliente"
-                                    value={novoPedido.cliente}
-                                    onChange={(e) => setNovoPedido({...novoPedido, cliente: e.target.value})}
-                                    className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
-                                />
-
-                                <button
-                                    onClick={criarPedido}
-                                    className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 font-bold text-lg flex items-center justify-center gap-2"
-                                >
-                                    <icons.Plus /> Criar Pedido
-                                </button>
+                          
+                                  {drinks.filter(
+                                    (d) =>
+                                      d.nome.toLowerCase().includes(novoPedido.drinkBusca.toLowerCase()) ||
+                                      d.codigo.toLowerCase().includes(novoPedido.drinkBusca.toLowerCase())
+                                  ).length === 0 && (
+                                    <div className="px-4 py-2 text-green-200 text-sm">
+                                      Nenhum resultado encontrado
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
+                          
+                            {/* Campo de cliente */}
+                            <input
+                              type="text"
+                              placeholder="Nome do Cliente"
+                              value={novoPedido.cliente}
+                              onChange={(e) =>
+                                setNovoPedido({ ...novoPedido, cliente: e.target.value })
+                              }
+                              className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
+                            />
+                          
+                            {/* Botão criar pedido */}
+                            <button
+                              onClick={criarPedido}
+                              className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg p-4 font-bold text-lg flex items-center justify-center gap-2"
+                            >
+                              <icons.Plus /> Criar Pedido
+                            </button>
+                          </div>
+
                         </div>
 
                         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
