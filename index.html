@@ -411,7 +411,7 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 codigoDrink: drink.codigo || drink.id,
-                drink: drink.nome || drink.name,
+                drink: drink.name,
                 cliente: novoPedido.cliente.trim(),
               }),
             });
@@ -419,10 +419,9 @@
             const result = await response.json();
         
             if (result.success) {
-              setMensagem(`✅ Pedido criado! Número: ${result.numeroPedido}`);
+              setMensagem(`✅ Pedido #${result.numeroPedido} criado!`);
               setNovoPedido({ drinkId: "", cliente: "", drinkBusca: "" });
         
-              // Recarregar dados
               const resp2 = await fetch(`${API_URL}?action=getPedidosData`);
               const data2 = await resp2.json();
               setDrinks(data2.drinks || []);
@@ -430,12 +429,12 @@
         
               setTimeout(() => setMensagem(""), 4000);
             } else {
-              setMensagem("❌ Erro ao criar pedido: " + (result.error || ''));
+              setMensagem("❌ Erro: " + (result.error || ''));
               setTimeout(() => setMensagem(""), 4000);
             }
           } catch (err) {
-            console.error("Erro ao criar pedido:", err);
-            setMensagem(`❌ Erro: ${err.message}`);
+            console.error("Erro:", err);
+            setMensagem(`❌ ${err.message}`);
             setTimeout(() => setMensagem(""), 4000);
           }
         };
@@ -494,18 +493,16 @@
                       }
                       className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
                     />
-      
+                  
                     {novoPedido.drinkBusca && (
                       <div className="absolute z-10 w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg mt-1 max-h-56 overflow-y-auto">
                         {drinks
-                          .filter(
-                            (d) => {
-                              const busca = (novoPedido.drinkBusca || "").toLowerCase();
-                              const nome = (d.nome || "").toLowerCase();
-                              const codigo = (d.codigo || "").toString().toLowerCase();
-                              return nome.includes(busca) || codigo.includes(busca);
-                            }
-                          )
+                          .filter((d) => {
+                            const busca = (novoPedido.drinkBusca || "").toLowerCase().trim();
+                            const nome = (d.name || "").toLowerCase().trim();
+                            const codigo = (d.codigo || "").toString().toLowerCase().trim();
+                            return nome.includes(busca) || codigo.includes(busca);
+                          })
                           .slice(0, 10)
                           .map((d) => (
                             <button
@@ -514,24 +511,22 @@
                                 setNovoPedido({
                                   ...novoPedido,
                                   drinkId: d.id,
-                                  drinkBusca: `${d.nome} (${d.codigo})`,
+                                  drinkBusca: `${d.name} (${d.codigo})`,
                                 })
                               }
                               className="block w-full text-left px-4 py-2 hover:bg-green-500/30 text-white"
                             >
-                              <span className="font-semibold">{d.nome}</span>{" "}
+                              <span className="font-semibold">{d.name}</span>{" "}
                               <span className="text-green-200">({d.codigo})</span>
                             </button>
                           ))}
-      
-                        {drinks.filter(
-                          (d) => {
-                            const busca = (novoPedido.drinkBusca || "").toLowerCase();
-                            const nome = (d.nome || "").toLowerCase();
-                            const codigo = (d.codigo || "").toString().toLowerCase();
-                            return nome.includes(busca) || codigo.includes(busca);
-                          }
-                        ).length === 0 && (
+                  
+                        {drinks.filter((d) => {
+                          const busca = (novoPedido.drinkBusca || "").toLowerCase().trim();
+                          const nome = (d.name || "").toLowerCase().trim();
+                          const codigo = (d.codigo || "").toString().toLowerCase().trim();
+                          return nome.includes(busca) || codigo.includes(busca);
+                        }).length === 0 && (
                           <div className="px-4 py-2 text-green-200 text-sm">
                             Nenhum drink encontrado
                           </div>
