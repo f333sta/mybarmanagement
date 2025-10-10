@@ -1817,16 +1817,14 @@
             );
         };
 
-        <script type="text/babel">
+        <script type="text/babel" data-presets="react">
           const App = () => {
             const [userRole, setUserRole] = React.useState(null);
         
             const handleLogin = (role) => setUserRole(role);
             const handleLogout = () => setUserRole(null);
         
-            if (!userRole) {
-              return <LoginScreen onLogin={handleLogin} />;
-            }
+            if (!userRole) return <LoginScreen onLogin={handleLogin} />;
         
             switch (userRole) {
               case 'atendente':
@@ -1842,5 +1840,6 @@
         
           ReactDOM.render(<App />, document.getElementById('root'));
         </script>
+
         </body>
 </html>
