@@ -204,6 +204,13 @@
               return;
             }
         
+            // TEMPORÁRIO: Permite login com qualquer usuário/senha para testes
+            // Remova estas linhas quando o backend estiver funcionando
+            if (username.trim() && password.trim()) {
+              onLogin('manager');
+              return;
+            }
+        
             try {
               setLoading(true);
             
@@ -358,7 +365,16 @@
               const response = await fetch(`${API_URL}?action=getPedidosData`);
               const data = await response.json();
               if (!ativo) return;
-              setDrinks(data.drinks || []);
+              
+              // Filtra apenas drinks (produtos com tipo "drink" ou categoria "drinks")
+              const todosProdutos = data.drinks || data.products || [];
+              const apenasdrinks = todosProdutos.filter(p => 
+                (p.tipo && p.tipo.toLowerCase() === 'drink') || 
+                (p.categoria && p.categoria.toLowerCase() === 'drinks') ||
+                (p.type && p.type.toLowerCase() === 'drink')
+              );
+              
+              setDrinks(apenasdrinks);
               setPedidos(data.pedidos || []);
             } catch (err) {
               console.error("Erro ao carregar dados:", err);
@@ -397,8 +413,8 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                codigoDrink: drink.codigo,
-                drink: drink.nome,
+                codigoDrink: drink.codigo || drink.code || drink.id,
+                drink: drink.nome || drink.name,
                 cliente: novoPedido.cliente.trim(),
               }),
             });
@@ -462,6 +478,12 @@
               {/* Novo Pedido */}
               <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-4 border border-white/20">
                 <h2 className="text-xl font-bold text-white mb-4">Novo Pedido</h2>
+                
+                {drinks.length === 0 && !loading && (
+                  <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-3 mb-4 text-yellow-200 text-center">
+                    ⚠️ Nenhum drink cadastrado no sistema. Cadastre drinks no painel Manager primeiro.
+                  </div>
+                )}
       
                 <div className="space-y-3 relative">
                   {/* Campo de busca de drinks */}
@@ -480,13 +502,12 @@
                       <div className="absolute z-10 w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg mt-1 max-h-56 overflow-y-auto">
                         {drinks
                           .filter(
-                            (d) =>
-                              (d.nome || "")
-                                .toLowerCase()
-                                .includes((novoPedido.drinkBusca || "").toLowerCase()) ||
-                              (d.codigo || "")
-                                .toLowerCase()
-                                .includes((novoPedido.drinkBusca || "").toLowerCase())
+                            (d) => {
+                              const busca = (novoPedido.drinkBusca || "").toLowerCase();
+                              const nome = (d.nome || d.name || "").toLowerCase();
+                              const codigo = (d.codigo || d.code || d.id || "").toString().toLowerCase();
+                              return nome.includes(busca) || codigo.includes(busca);
+                            }
                           )
                           .slice(0, 10)
                           .map((d) => (
@@ -496,27 +517,26 @@
                                 setNovoPedido({
                                   ...novoPedido,
                                   drinkId: d.id,
-                                  drinkBusca: `${d.nome} (${d.codigo})`,
+                                  drinkBusca: `${d.nome || d.name} (${d.codigo || d.code || d.id})`,
                                 })
                               }
                               className="block w-full text-left px-4 py-2 hover:bg-green-500/30 text-white"
                             >
-                              <span className="font-semibold">{d.nome}</span>{" "}
-                              <span className="text-green-200">({d.codigo})</span>
+                              <span className="font-semibold">{d.nome || d.name}</span>{" "}
+                              <span className="text-green-200">({d.codigo || d.code || d.id})</span>
                             </button>
                           ))}
       
                         {drinks.filter(
-                          (d) =>
-                            (d.nome || "")
-                              .toLowerCase()
-                              .includes((novoPedido.drinkBusca || "").toLowerCase()) ||
-                            (d.codigo || "")
-                              .toLowerCase()
-                              .includes((novoPedido.drinkBusca || "").toLowerCase())
+                          (d) => {
+                            const busca = (novoPedido.drinkBusca || "").toLowerCase();
+                            const nome = (d.nome || d.name || "").toLowerCase();
+                            const codigo = (d.codigo || d.code || d.id || "").toString().toLowerCase();
+                            return nome.includes(busca) || codigo.includes(busca);
+                          }
                         ).length === 0 && (
                           <div className="px-4 py-2 text-green-200 text-sm">
-                            Nenhum resultado encontrado
+                            Nenhum drink encontrado
                           </div>
                         )}
                       </div>
