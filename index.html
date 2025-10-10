@@ -294,9 +294,12 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Pedido criado com sucesso! Número: ' + result.numeroPedido);
-                        setNovoPedido({ drinkId: '', cliente: '' });
-                        loadData();
+                      setMensagem(`✅ Pedido criado com sucesso! Número: ${result.numeroPedido}`);
+                      setNovoPedido({ drinkId: '', cliente: '' });
+                      loadData();
+                      setTimeout(() => setMensagem(''), 4000);
+                    } else {
+                      setMensagem('❌ Erro ao criar pedido.');
                     }
                 } catch (err) {
                     alert('❌ Erro ao criar pedido: ' + err.message);
@@ -398,6 +401,9 @@
                               className="w-full bg-white/20 text-white rounded-lg p-4 border border-white/30 placeholder-green-300 text-lg"
                             />
                           
+                            {mensagem && (
+                             <div className="text-center text-green-300 font-semibold mb-2">{mensagem}</div>
+                            )}
                             {/* Botão criar pedido */}
                             <button
                               onClick={criarPedido}
