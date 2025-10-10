@@ -108,6 +108,72 @@
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             ),
+            Trash2: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            ),
+            X: () => (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            ),
+            Edit: () => (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            ),
+        };
+
+        // Modal de Confirmação
+        const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type = "delete" }) => {
+          if (!isOpen) return null;
+
+          const colors = {
+            delete: "bg-red-500 hover:bg-red-600",
+            edit: "bg-blue-500 hover:bg-blue-600",
+          };
+
+          return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 max-w-md w-full border-2 border-white/30 shadow-2xl animate-scale-in">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${type === 'delete' ? 'bg-red-100' : 'bg-blue-100'}`}>
+                      <icons.AlertTriangle />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <icons.X />
+                  </button>
+                </div>
+                
+                <p className="text-gray-600 mb-6">{message}</p>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={onClose}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      onConfirm();
+                      onClose();
+                    }}
+                    className={`flex-1 ${colors[type]} text-white font-semibold py-3 px-4 rounded-lg transition-colors`}
+                  >
+                    {type === 'delete' ? 'Excluir' : 'Confirmar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
         };
 
         // Componente de Login
@@ -151,7 +217,7 @@
               });
             
               const result = await response.json();
-              console.log('Login result:', result); // 👉 debug útil
+              console.log('Login result:', result);
             
               if (result.success) {
                 onLogin('manager');
@@ -164,6 +230,7 @@
             } finally {
               setLoading(false);
             }
+          };
         
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -385,7 +452,7 @@
               <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h1 className="text-2xl font-bold text-white">📝 Atendente</h1>
+                    <h1 className="text-2xl font-bold text-white">📋 Atendente</h1>
                     <p className="text-green-200 text-sm">Cadastro de Pedidos</p>
                   </div>
                   <button
@@ -768,12 +835,22 @@
           const [transactions, setTransactions] = useState([]);
           const [loading, setLoading] = useState(true);
           const [message, setMessage] = useState("");
-          const [messageType, setMessageType] = useState("success"); // "success" | "error" | "info"
+          const [messageType, setMessageType] = useState("success");
+          const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: 'delete', title: '', message: '', onConfirm: null });
+          const [editingProduct, setEditingProduct] = useState(null);
         
           const showMessage = (text, type = "info") => {
             setMessage(text);
             setMessageType(type);
             setTimeout(() => setMessage(""), 4000);
+          };
+
+          const openConfirmModal = (type, title, message, onConfirm) => {
+            setConfirmModal({ isOpen: true, type, title, message, onConfirm });
+          };
+
+          const closeConfirmModal = () => {
+            setConfirmModal({ isOpen: false, type: 'delete', title: '', message: '', onConfirm: null });
           };
         
           const loadAllData = async () => {
@@ -796,7 +873,6 @@
             loadAllData();
           }, []);
         
-          // Funções — agora com mensagens na tela, sem alert/confirm
           const addProduct = async () => {
             const name = prompt("Nome do produto:");
             const price = prompt("Preço do produto:");
@@ -906,87 +982,142 @@
             }
           };
         
-          const deleteProduct = async (id) => {
-            try {
-              const response = await fetch(`${API_URL}?action=deleteProduct&id=${id}`, { method: "POST" });
-              const result = await response.json();
-              if (result.success) {
-                showMessage("🗑️ Produto excluído!", "success");
-                loadAllData();
-              } else {
-                showMessage("❌ Erro ao excluir produto.", "error");
+          const deleteProduct = async (id, name) => {
+            openConfirmModal(
+              'delete',
+              'Excluir Produto',
+              `Tem certeza que deseja excluir o produto "${name}"? Esta ação não pode ser desfeita.`,
+              async () => {
+                try {
+                  const response = await fetch(`${API_URL}?action=deleteProduct&id=${id}`, { method: "POST" });
+                  const result = await response.json();
+                  if (result.success) {
+                    showMessage("🗑️ Produto excluído!", "success");
+                    loadAllData();
+                  } else {
+                    showMessage("❌ Erro ao excluir produto.", "error");
+                  }
+                } catch (err) {
+                  console.error("Erro:", err);
+                  showMessage("❌ Falha ao excluir produto.", "error");
+                }
               }
-            } catch (err) {
-              console.error("Erro:", err);
-              showMessage("❌ Falha ao excluir produto.", "error");
-            }
+            );
           };
         
           const deleteSale = async (id) => {
-            try {
-              const response = await fetch(`${API_URL}?action=deleteSale&id=${id}`, { method: "POST" });
-              const result = await response.json();
-              if (result.success) {
-                showMessage("🗑️ Venda excluída!", "success");
-                loadAllData();
-              } else {
-                showMessage("❌ Erro ao excluir venda.", "error");
+            openConfirmModal(
+              'delete',
+              'Excluir Venda',
+              `Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.`,
+              async () => {
+                try {
+                  const response = await fetch(`${API_URL}?action=deleteSale&id=${id}`, { method: "POST" });
+                  const result = await response.json();
+                  if (result.success) {
+                    showMessage("🗑️ Venda excluída!", "success");
+                    loadAllData();
+                  } else {
+                    showMessage("❌ Erro ao excluir venda.", "error");
+                  }
+                } catch (err) {
+                  console.error("Erro:", err);
+                  showMessage("❌ Falha ao excluir venda.", "error");
+                }
               }
-            } catch (err) {
-              console.error("Erro:", err);
-              showMessage("❌ Falha ao excluir venda.", "error");
-            }
+            );
           };
         
           const deletePurchase = async (id) => {
-            try {
-              const response = await fetch(`${API_URL}?action=deletePurchase&id=${id}`, { method: "POST" });
-              const result = await response.json();
-              if (result.success) {
-                showMessage("🗑️ Compra excluída!", "success");
-                loadAllData();
-              } else {
-                showMessage("❌ Erro ao excluir compra.", "error");
+            openConfirmModal(
+              'delete',
+              'Excluir Compra',
+              `Tem certeza que deseja excluir esta compra? Esta ação não pode ser desfeita.`,
+              async () => {
+                try {
+                  const response = await fetch(`${API_URL}?action=deletePurchase&id=${id}`, { method: "POST" });
+                  const result = await response.json();
+                  if (result.success) {
+                    showMessage("🗑️ Compra excluída!", "success");
+                    loadAllData();
+                  } else {
+                    showMessage("❌ Erro ao excluir compra.", "error");
+                  }
+                } catch (err) {
+                  console.error("Erro:", err);
+                  showMessage("❌ Falha ao excluir compra.", "error");
+                }
               }
-            } catch (err) {
-              console.error("Erro:", err);
-              showMessage("❌ Falha ao excluir compra.", "error");
-            }
+            );
           };
         
           const deleteTransactionManual = async (id) => {
-            try {
-              const response = await fetch(`${API_URL}?action=deleteTransactionManual&id=${id}`, { method: "POST" });
-              const result = await response.json();
-              if (result.success) {
-                showMessage("🗑️ Transação excluída!", "success");
-                loadAllData();
-              } else {
-                showMessage("❌ Erro ao excluir transação.", "error");
+            openConfirmModal(
+              'delete',
+              'Excluir Transação',
+              `Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.`,
+              async () => {
+                try {
+                  const response = await fetch(`${API_URL}?action=deleteTransactionManual&id=${id}`, { method: "POST" });
+                  const result = await response.json();
+                  if (result.success) {
+                    showMessage("🗑️ Transação excluída!", "success");
+                    loadAllData();
+                  } else {
+                    showMessage("❌ Erro ao excluir transação.", "error");
+                  }
+                } catch (err) {
+                  console.error("Erro:", err);
+                  showMessage("❌ Falha ao excluir transação.", "error");
+                }
               }
-            } catch (err) {
-              console.error("Erro:", err);
-              showMessage("❌ Falha ao excluir transação.", "error");
-            }
+            );
           };
         
-          const updateStock = async (id, value) => {
-            try {
-              const response = await fetch(`${API_URL}?action=updateStock`, {
-                method: "POST",
-                body: JSON.stringify({ id, value }),
-              });
-              const result = await response.json();
-              if (result.success) {
-                showMessage("📦 Estoque atualizado!", "success");
-                loadAllData();
-              } else {
-                showMessage("❌ Erro ao atualizar estoque.", "error");
-              }
-            } catch (err) {
-              console.error("Erro:", err);
-              showMessage("❌ Falha ao atualizar estoque.", "error");
+          // Estoque não pode mais ser alterado manualmente - é calculado por compras e vendas
+
+          const startEditProduct = (product) => {
+            setEditingProduct({ ...product, newName: product.name, newPrice: product.price });
+          };
+
+          const cancelEditProduct = () => {
+            setEditingProduct(null);
+          };
+
+          const saveEditProduct = async () => {
+            if (!editingProduct.newName || !editingProduct.newPrice) {
+              showMessage("⚠️ Preencha todos os campos!", "error");
+              return;
             }
+
+            openConfirmModal(
+              'edit',
+              'Atualizar Produto',
+              `Deseja atualizar "${editingProduct.name}" para "${editingProduct.newName}" com preço R$ ${parseFloat(editingProduct.newPrice).toFixed(2)}?`,
+              async () => {
+                try {
+                  const response = await fetch(`${API_URL}?action=updateProduct`, {
+                    method: "POST",
+                    body: JSON.stringify({ 
+                      id: editingProduct.id, 
+                      name: editingProduct.newName, 
+                      price: editingProduct.newPrice 
+                    }),
+                  });
+                  const result = await response.json();
+                  if (result.success) {
+                    showMessage("✅ Produto atualizado!", "success");
+                    setEditingProduct(null);
+                    loadAllData();
+                  } else {
+                    showMessage("❌ Erro ao atualizar produto.", "error");
+                  }
+                } catch (err) {
+                  console.error("Erro:", err);
+                  showMessage("❌ Falha ao atualizar produto.", "error");
+                }
+              }
+            );
           };
         
           if (loading) {
@@ -999,6 +1130,15 @@
         
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 relative">
+              <ConfirmModal 
+                isOpen={confirmModal.isOpen}
+                onClose={closeConfirmModal}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                type={confirmModal.type}
+              />
+
               <div className="max-w-6xl mx-auto">
                 {/* Cabeçalho */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20 flex justify-between items-center">
@@ -1033,10 +1173,15 @@
         
                 {/* Produtos */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
-                  <h2 className="text-xl font-bold text-white mb-4">Produtos</h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-white">Produtos</h2>
+                    <div className="text-purple-200 text-sm">
+                      💡 Estoque calculado automaticamente por compras e vendas
+                    </div>
+                  </div>
                   <button
                     onClick={addProduct}
-                    className="mb-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg"
+                    className="mb-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                   >
                     <icons.Plus /> Adicionar Produto
                   </button>
@@ -1047,30 +1192,126 @@
                           <th className="px-4 py-2">Nome</th>
                           <th className="px-4 py-2 text-right">Preço</th>
                           <th className="px-4 py-2 text-center">Estoque</th>
-                          <th className="px-4 py-2 text-center">Atualizar</th>
-                          <th className="px-4 py-2 text-center">Excluir</th>
+                          <th className="px-4 py-2 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
                         {products.map((p) => (
                           <tr key={p.id} className="border-b border-white/10 hover:bg-purple-500/10">
-                            <td className="px-4 py-2">{p.name}</td>
-                            <td className="px-4 py-2 text-right">R$ {parseFloat(p.price).toFixed(2)}</td>
-                            <td className="px-4 py-2 text-center">{p.stock}</td>
-                            <td className="px-4 py-2 text-center">
-                              <label className="flex justify-center items-center gap-2 text-white">
-                                <input
-                                  type="number"
-                                  defaultValue={p.stock}
-                                  className="w-16 text-center bg-white/20 rounded-md text-white"
-                                  onBlur={(e) => updateStock(p.id, e.target.value)}
-                                />
-                              </label>
-                            </td>
+                            {editingProduct && editingProduct.id === p.id ? (
+                              <>
+                                <td className="px-4 py-2">
+                                  <input
+                                    type="text"
+                                    value={editingProduct.newName}
+                                    onChange={(e) => setEditingProduct({...editingProduct, newName: e.target.value})}
+                                    className="w-full bg-white/20 text-white rounded px-2 py-1"
+                                  />
+                                </td>
+                                <td className="px-4 py-2 text-right">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingProduct.newPrice}
+                                    onChange={(e) => setEditingProduct({...editingProduct, newPrice: e.target.value})}
+                                    className="w-24 bg-white/20 text-white rounded px-2 py-1 text-right"
+                                  />
+                                </td>
+                                <td className="px-4 py-2 text-center">{p.stock}</td>
+                                <td className="px-4 py-2">
+                                  <div className="flex justify-center gap-2">
+                                    <button
+                                      onClick={saveEditProduct}
+                                      className="text-green-400 hover:text-green-600 p-1"
+                                      title="Salvar"
+                                    >
+                                      <icons.Check />
+                                    </button>
+                                    <button
+                                      onClick={cancelEditProduct}
+                                      className="text-red-400 hover:text-red-600 p-1"
+                                      title="Cancelar"
+                                    >
+                                      <icons.X />
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td className="px-4 py-2">{p.name}</td>
+                                <td className="px-4 py-2 text-right">R$ {parseFloat(p.price).toFixed(2)}</td>
+                                <td className="px-4 py-2 text-center">
+                                  <input
+                                    type="number"
+                                    defaultValue={p.stock}
+                                    onBlur={(e) => {
+                                      if (e.target.value !== p.stock.toString()) {
+                                        updateStock(p.id, e.target.value, p.name);
+                                      }
+                                    }}
+                                    className="w-16 text-center bg-white/20 rounded-md text-white px-2 py-1"
+                                  />
+                                </td>
+                                <td className="px-4 py-2">
+                                  <div className="flex justify-center gap-2">
+                                    <button
+                                      onClick={() => startEditProduct(p)}
+                                      className="text-blue-400 hover:text-blue-600 p-1"
+                                      title="Editar"
+                                    >
+                                      <icons.Edit />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteProduct(p.id, p.name)}
+                                      className="text-red-400 hover:text-red-600 p-1"
+                                      title="Excluir"
+                                    >
+                                      <icons.Trash2 />
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Vendas */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
+                  <h2 className="text-xl font-bold text-white mb-4">Vendas</h2>
+                  <button
+                    onClick={addSale}
+                    className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <icons.Plus /> Registrar Venda
+                  </button>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-white text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/10">
+                          <th className="px-4 py-2">Produto</th>
+                          <th className="px-4 py-2 text-center">Quantidade</th>
+                          <th className="px-4 py-2 text-right">Total</th>
+                          <th className="px-4 py-2 text-center">Data</th>
+                          <th className="px-4 py-2 text-center">Excluir</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sales.map((s) => (
+                          <tr key={s.id} className="border-b border-white/10 hover:bg-green-500/10">
+                            <td className="px-4 py-2">{s.productName}</td>
+                            <td className="px-4 py-2 text-center">{s.quantity}</td>
+                            <td className="px-4 py-2 text-right">R$ {parseFloat(s.total).toFixed(2)}</td>
+                            <td className="px-4 py-2 text-center text-sm">{s.date}</td>
                             <td className="px-4 py-2 text-center">
                               <button
-                                onClick={() => deleteProduct(p.id)}
+                                onClick={() => deleteSale(s.id)}
                                 className="text-red-400 hover:text-red-600"
+                                title="Excluir"
                               >
                                 <icons.Trash2 />
                               </button>
@@ -1081,41 +1322,126 @@
                     </table>
                   </div>
                 </div>
-        
+
+                {/* Compras */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
+                  <h2 className="text-xl font-bold text-white mb-4">Compras</h2>
+                  <button
+                    onClick={addPurchase}
+                    className="mb-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <icons.Plus /> Registrar Compra
+                  </button>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-white text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/10">
+                          <th className="px-4 py-2">Produto</th>
+                          <th className="px-4 py-2 text-center">Quantidade</th>
+                          <th className="px-4 py-2 text-right">Total</th>
+                          <th className="px-4 py-2 text-center">Data</th>
+                          <th className="px-4 py-2 text-center">Excluir</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {purchases.map((p) => (
+                          <tr key={p.id} className="border-b border-white/10 hover:bg-blue-500/10">
+                            <td className="px-4 py-2">{p.productName}</td>
+                            <td className="px-4 py-2 text-center">{p.quantity}</td>
+                            <td className="px-4 py-2 text-right">R$ {parseFloat(p.total).toFixed(2)}</td>
+                            <td className="px-4 py-2 text-center text-sm">{p.date}</td>
+                            <td className="px-4 py-2 text-center">
+                              <button
+                                onClick={() => deletePurchase(p.id)}
+                                className="text-red-400 hover:text-red-600"
+                                title="Excluir"
+                              >
+                                <icons.Trash2 />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Transações Manuais */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
+                  <h2 className="text-xl font-bold text-white mb-4">Transações Manuais</h2>
+                  <button
+                    onClick={addTransactionManual}
+                    className="mb-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <icons.Plus /> Registrar Transação
+                  </button>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-white text-left border-collapse">
+                      <thead>
+                        <tr className="bg-white/10">
+                          <th className="px-4 py-2">Descrição</th>
+                          <th className="px-4 py-2 text-right">Valor</th>
+                          <th className="px-4 py-2 text-center">Data</th>
+                          <th className="px-4 py-2 text-center">Excluir</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((t) => (
+                          <tr key={t.id} className="border-b border-white/10 hover:bg-amber-500/10">
+                            <td className="px-4 py-2">{t.description}</td>
+                            <td className="px-4 py-2 text-right">
+                              <span className={parseFloat(t.value) >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                R$ {parseFloat(t.value).toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-center text-sm">{t.date}</td>
+                            <td className="px-4 py-2 text-center">
+                              <button
+                                onClick={() => deleteTransactionManual(t.id)}
+                                className="text-red-400 hover:text-red-600"
+                                title="Excluir"
+                              >
+                                <icons.Trash2 />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 <footer className="text-center text-purple-200 mt-10 text-sm">
-                  Sistema de Gerenciamento © {new Date().getFullYear()}
+                  Crafted with ☕ by <span className="text-purple-200 font-semibold">LCSBR</span> – 2025
                 </footer>
               </div>
             </div>
           );
         };
-       </script>
           
-        <script type="text/babel" data-presets="env,react">
-          const App = () => {
-            const [userRole, setUserRole] = React.useState(null);
-        
-            const handleLogin = (role) => setUserRole(role);
-            const handleLogout = () => setUserRole(null);
-        
-            if (!userRole) {
+        const App = () => {
+          const [userRole, setUserRole] = React.useState(null);
+      
+          const handleLogin = (role) => setUserRole(role);
+          const handleLogout = () => setUserRole(null);
+      
+          if (!userRole) {
+            return <LoginScreen onLogin={handleLogin} />;
+          }
+      
+          switch (userRole) {
+            case "atendente":
+              return <AtendenteScreen onLogout={handleLogout} />;
+            case "barista":
+              return <BaristaScreen onLogout={handleLogout} />;
+            case "manager":
+              return <BarManagementSystem onLogout={handleLogout} />;
+            default:
               return <LoginScreen onLogin={handleLogin} />;
-            }
-        
-            switch (userRole) {
-              case "atendente":
-                return <AtendenteScreen onLogout={handleLogout} />;
-              case "barista":
-                return <BaristaScreen onLogout={handleLogout} />;
-              case "manager":
-                return <BarManagementSystem />;
-              default:
-                return <LoginScreen onLogin={handleLogin} />;
-            }
-          };
-        
-          ReactDOM.render(<App />, document.getElementById("root"));
-        </script>
+          }
+        };
+      
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
   </body>
 </html>
-
