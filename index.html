@@ -114,40 +114,42 @@
             const [selectedProfile, setSelectedProfile] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-
-            const handleLogin = () => {
+        
+            const handleLogin = async () => {
                 if (!selectedProfile) {
                     setError('Selecione um perfil!');
                     return;
                 }
-
-                const fazerLogin = async () => {
-                  if (!usuario.trim() || !senha.trim()) {
-                    alert('Preencha usuário e senha.');
-                    return;
-                  }
-                
-                  try {
-                    const response = await fetch(`${API_URL}?action=login`, {
-                      method: 'POST',
-                      body: JSON.stringify({ usuario, senha }),
-                    });
-                    const result = await response.json();
-                
-                    if (result.success) {
-                      alert(`Bem-vindo, ${result.nome}!`);
-                      setTela('manager');
-                    } else {
-                      alert(result.message || 'Usuário ou senha incorretos.');
+        
+                if (selectedProfile === 'manager') {
+                    if (!password.trim()) {
+                        setError('Digite a senha!');
+                        return;
                     }
-                  } catch (err) {
-                    alert('Erro ao conectar com o servidor: ' + err.message);
-                  }
-                };
-
+        
+                    try {
+                        const response = await fetch(`${API_URL}?action=login`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                usuario: 'manager',
+                                senha: password,
+                            }),
+                        });
+        
+                        const result = await response.json();
+        
+                        if (result.success) {
+                            onLogin('manager');
+                        } else {
+                            setError(result.message || 'Usuário ou senha incorretos.');
+                        }
+                    } catch (err) {
+                        setError('Erro ao conectar com o servidor.');
+                    }
+                } else {
+                    // acessos simples (sem senha)
+                    onLogin(selectedProfile);
                 }
-
-                onLogin(selectedProfile);
             };
 
             return (
