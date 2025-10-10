@@ -207,8 +207,6 @@
             try {
               setLoading(true);
             
-              console.log('🔐 Tentando login com:', { usuario: username, senha: '***' });
-            
               const response = await fetch(`${API_URL}?action=login`, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -218,7 +216,6 @@
               });
             
               const result = await response.json();
-              console.log('📥 Resposta do servidor:', result);
             
               if (result.success) {
                 console.log('✅ Login bem-sucedido!');
@@ -365,17 +362,12 @@
             try {
               const response = await fetch(`${API_URL}?action=getPedidosData`);
               const data = await response.json();
-              
-              console.log('✅ Dados recebidos:', data);
-              
+                            
               if (!ativo) return;
               
               // A API retorna drinks já filtrados (apenas categoria "Drinks")
               const drinks = data.drinks || [];
               const pedidos = data.pedidos || [];
-              
-              console.log(`✅ ${drinks.length} drinks encontrados (categoria "Drinks")`);
-              console.log('Drinks:', drinks.map(d => d.nome).join(', '));
               
               setDrinks(drinks);
               setPedidos(pedidos);
@@ -404,37 +396,38 @@
             setTimeout(() => setMensagem(""), 3000);
             return;
           }
-      
+
           const drink = drinks.find((d) => d.id == novoPedido.drinkId);
+          
           if (!drink) {
             setMensagem("⚠️ Selecione um drink válido!");
             setTimeout(() => setMensagem(""), 3000);
             return;
           }
-      
+        
           try {
             const response = await fetch(`${API_URL}?action=addPedido`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                codigoDrink: drink.codigo,
+                codigoDrink: drink.codigo || drink.id,
                 drink: drink.nome,
                 cliente: novoPedido.cliente.trim(),
               }),
             });
-      
+        
             const result = await response.json();
-      
+        
             if (result.success) {
               setMensagem(`✅ Pedido criado com sucesso! Número: ${result.numeroPedido}`);
               setNovoPedido({ drinkId: "", cliente: "", drinkBusca: "" });
-      
+        
               // recarrega a lista
               const resp2 = await fetch(`${API_URL}?action=getPedidosData`);
               const data2 = await resp2.json();
               setDrinks(data2.drinks || []);
               setPedidos(data2.pedidos || []);
-      
+        
               setTimeout(() => setMensagem(""), 4000);
             } else {
               setMensagem("❌ Erro ao criar pedido.");
