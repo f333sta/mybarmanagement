@@ -359,55 +359,34 @@
           const [message, setMessage] = React.useState("");
           const [messageType, setMessageType] = React.useState("success");
         
-          // Mensagens de feedback
           const showMessage = (msg, type = "info") => {
             setMessage(msg);
             setMessageType(type);
             setTimeout(() => setMessage(""), 3500);
           };
         
-          // ========== Carregamento de dados ==========
+          // ----- carregar dados -----
           const loadProdutos = async () => {
             try {
-              const response = await fetch(`${API_URL}?action=getProdutos`);
-              if (!response.ok) throw new Error("Falha ao conectar com a API");
-              const data = await response.json();
-        
-              // Normaliza campos (segurança contra undefined / nome de campo diferente)
-              const raw = data.produtos || [];
-              const normalized = raw.map((p, i) => {
+              const r = await fetch(`${API_URL}?action=getProdutos`);
+              if (!r.ok) throw new Error("Falha ao conectar com a API");
+              const d = await r.json();
+              const base = d.produtos || [];
+              const norm = base.map((p, i) => {
                 if (!p || typeof p !== "object") {
                   console.warn("Produto inválido no índice", i, p);
-                  return {
-                    id: "",
-                    nome: "",
-                    codigo: "",
-                    categoria: "",
-                    precoVenda: 0,
-                    estoque: 0,
-                    estoqueMinimo: 0,
-                    controlaEstoque: true,
-                  };
+                  return { id: "", nome: "", codigo: "", categoria: "", precoVenda: 0 };
                 }
-        
-                const nome =
-                  p.nome ??
-                  p.Nome ??
-                  p.name ??
-                  p.produtoNome ??
-                  p.produto_nome ??
-                  "";
+                const nome = p.nome ?? p.Nome ?? p.name ?? "";
                 const codigo = p.codigo ?? p.Codigo ?? p.code ?? "";
                 const categoria = p.categoria ?? p.Categoria ?? p.category ?? "";
                 const precoVenda =
                   Number(p.precoVenda ?? p.PrecoVenda ?? p.preco ?? p.price ?? 0) || 0;
-        
                 return { ...p, nome, codigo, categoria, precoVenda };
               });
-        
-              setProdutos(normalized);
-            } catch (err) {
-              console.error("Erro loadProdutos:", err);
+              setProdutos(norm);
+            } catch (e) {
+              console.error(e);
               setProdutos([]);
               showMessage("❌ Erro ao carregar produtos", "error");
             }
@@ -415,12 +394,12 @@
         
           const loadPedidos = async () => {
             try {
-              const response = await fetch(`${API_URL}?action=getPedidosData`);
-              if (!response.ok) throw new Error("Falha ao conectar com a API");
-              const data = await response.json();
-              setPedidos(data.pedidos || []);
-            } catch (err) {
-              console.error("Erro ao carregar pedidos:", err);
+              const r = await fetch(`${API_URL}?action=getPedidosData`);
+              if (!r.ok) throw new Error("Falha ao conectar com a API");
+              const d = await r.json();
+              setPedidos(d.pedidos || []);
+            } catch (e) {
+              console.error(e);
               showMessage("❌ Erro ao carregar pedidos", "error");
             } finally {
               setLoading(false);
@@ -432,53 +411,44 @@
             loadPedidos();
           }, []);
         
-          // ========== Registrar novo pedido ==========
+          // ----- registrar pedido -----
           const addPedido = async () => {
-            if (!novoPedido.cliente || !novoPedido.drinkId) {
-              showMessage("⚠️ Informe o cliente e selecione o produto!", "error");
-              return;
-            }
+            if (!novoPedido.cliente || !novoPedido.drinkId)
+              return showMessage("⚠️ Informe o cliente e selecione o produto!", "error");
         
-            const produtoSelecionado = produtos.find((p) => p.id == novoPedido.drinkId);
-            if (!produtoSelecionado) {
-              showMessage("❌ Produto não encontrado", "error");
-              return;
-            }
+            const prod = produtos.find((p) => p.id == novoPedido.drinkId);
+            if (!prod) return showMessage("❌ Produto não encontrado", "error");
         
-            const pedidoPayload = {
+            const payload = {
               cliente: novoPedido.cliente,
               produto: {
-                id: produtoSelecionado.id,
-                nome: produtoSelecionado.nome,
-                codigo: produtoSelecionado.codigo,
-                preco: produtoSelecionado.precoVenda,
+                id: prod.id,
+                nome: prod.nome,
+                codigo: prod.codigo,
+                preco: prod.precoVenda,
               },
-              total: produtoSelecionado.precoVenda,
+              total: prod.precoVenda,
               data: new Date().toLocaleString("pt-BR"),
             };
         
             try {
-              const response = await fetch(`${API_URL}?action=addPedido`, {
+              const r = await fetch(`${API_URL}?action=addPedido`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(pedidoPayload),
+                body: JSON.stringify(payload),
               });
-        
-              const data = await response.json();
-              if (data.success) {
+              const d = await r.json();
+              if (d.success) {
                 showMessage("✅ Pedido cadastrado com sucesso!", "success");
                 setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
                 loadPedidos();
-              } else {
-                showMessage("⚠️ Erro ao cadastrar pedido", "error");
-              }
-            } catch (err) {
-              console.error(err);
+              } else showMessage("⚠️ Erro ao cadastrar pedido", "error");
+            } catch {
               showMessage("❌ Erro ao conectar ao servidor", "error");
             }
           };
         
-          // ========== Telas de Loading e Erro ==========
+          // ----- loading -----
           if (loading)
             return (
               <div className="min-h-screen flex items-center justify-center text-white text-2xl bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
@@ -486,11 +456,10 @@
               </div>
             );
         
-          // ========== Render principal ==========
+          // ----- render principal -----
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pb-10 p-4">
               <div className="max-w-6xl mx-auto">
-                {/* Cabeçalho */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
                   <h1 className="text-3xl font-bold text-white">☕ Atendente</h1>
                   <button
@@ -501,7 +470,6 @@
                   </button>
                 </div>
         
-                {/* Mensagens */}
                 {message && (
                   <div
                     className={`mb-4 p-3 rounded-lg text-center ${
@@ -514,7 +482,6 @@
                   </div>
                 )}
         
-                {/* Formulário novo pedido */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6">
                   <h3 className="text-2xl font-bold text-white mb-4">Novo Pedido</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -538,7 +505,6 @@
                     />
                   </div>
         
-                  {/* Lista de produtos (somente categoria Drinks) */}
                   {novoPedido.drinkBusca && (
                     <div className="bg-white/10 rounded-lg p-4 border border-white/20 max-h-60 overflow-y-auto mb-4">
                       {produtos
@@ -575,11 +541,8 @@
                   </button>
                 </div>
         
-                {/* Lista de pedidos */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                  <h3 className="text-2xl font-bold text-white mb-6">
-                    Pedidos Cadastrados
-                  </h3>
+                  <h3 className="text-2xl font-bold text-white mb-6">Pedidos Cadastrados</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-purple-100">
                       <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
@@ -594,10 +557,7 @@
                       <tbody>
                         {pedidos.length === 0 ? (
                           <tr>
-                            <td
-                              colSpan="5"
-                              className="text-center py-6 text-purple-300"
-                            >
+                            <td colSpan="5" className="text-center py-6 text-purple-300">
                               Nenhum pedido ainda
                             </td>
                           </tr>
