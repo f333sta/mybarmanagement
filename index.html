@@ -204,18 +204,17 @@
               return;
             }
         
-            // TEMPORÁRIO: Permite login com qualquer usuário/senha para testes
-            // Remova estas linhas quando o backend estiver funcionando
-            if (username.trim() && password.trim()) {
-              onLogin('manager');
-              return;
-            }
-        
             try {
               setLoading(true);
             
-              const response = await fetch(`${API_URL}?action=login&usuario=${encodeURIComponent(username.trim())}&senha=${encodeURIComponent(password.trim())}`, {
-                method: 'GET',
+              // A API espera POST com action no parâmetro da URL
+              const response = await fetch(`${API_URL}?action=login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  usuario: username.trim(),
+                  senha: password.trim(),
+                }),
               });
             
               const result = await response.json();
@@ -364,21 +363,25 @@
             try {
               const response = await fetch(`${API_URL}?action=getPedidosData`);
               const data = await response.json();
+              
+              console.log('✅ Dados recebidos da API:', data);
+              
               if (!ativo) return;
               
-              // Filtra apenas drinks (produtos com tipo "drink" ou categoria "drinks")
-              const todosProdutos = data.drinks || data.products || [];
-              const apenasdrinks = todosProdutos.filter(p => 
-                (p.tipo && p.tipo.toLowerCase() === 'drink') || 
-                (p.categoria && p.categoria.toLowerCase() === 'drinks') ||
-                (p.type && p.type.toLowerCase() === 'drink')
-              );
+              // A API retorna: { pedidos: [...], drinks: [...] }
+              // drinks já vem filtrado pela categoria "Drinks" ou "Doses"
+              const drinks = data.drinks || [];
+              const pedidos = data.pedidos || [];
               
-              setDrinks(apenasdrinks);
-              setPedidos(data.pedidos || []);
+              console.log('✅ Drinks encontrados:', drinks.length);
+              console.log('✅ Pedidos encontrados:', pedidos.length);
+              
+              setDrinks(drinks);
+              setPedidos(pedidos);
+              
             } catch (err) {
-              console.error("Erro ao carregar dados:", err);
-              setMensagem("❌ Erro ao carregar dados.");
+              console.error("❌ Erro ao carregar dados:", err);
+              setMensagem("❌ Erro ao carregar dados: " + err.message);
             } finally {
               if (ativo) setLoading(false);
             }
@@ -413,8 +416,8 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                codigoDrink: drink.codigo || drink.code || drink.id,
-                drink: drink.nome || drink.name,
+                codigoDrink: drink.codigo,
+                drink: drink.nome,
                 cliente: novoPedido.cliente.trim(),
               }),
             });
@@ -481,7 +484,7 @@
                 
                 {drinks.length === 0 && !loading && (
                   <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-3 mb-4 text-yellow-200 text-center">
-                    ⚠️ Nenhum drink cadastrado no sistema. Cadastre drinks no painel Manager primeiro.
+                    ⚠️ Nenhum drink cadastrado. Cadastre produtos com categoria "Drinks" ou "Doses" no sistema.
                   </div>
                 )}
       
@@ -504,8 +507,8 @@
                           .filter(
                             (d) => {
                               const busca = (novoPedido.drinkBusca || "").toLowerCase();
-                              const nome = (d.nome || d.name || "").toLowerCase();
-                              const codigo = (d.codigo || d.code || d.id || "").toString().toLowerCase();
+                              const nome = (d.nome || "").toLowerCase();
+                              const codigo = (d.codigo || "").toString().toLowerCase();
                               return nome.includes(busca) || codigo.includes(busca);
                             }
                           )
@@ -517,21 +520,21 @@
                                 setNovoPedido({
                                   ...novoPedido,
                                   drinkId: d.id,
-                                  drinkBusca: `${d.nome || d.name} (${d.codigo || d.code || d.id})`,
+                                  drinkBusca: `${d.nome} (${d.codigo})`,
                                 })
                               }
                               className="block w-full text-left px-4 py-2 hover:bg-green-500/30 text-white"
                             >
-                              <span className="font-semibold">{d.nome || d.name}</span>{" "}
-                              <span className="text-green-200">({d.codigo || d.code || d.id})</span>
+                              <span className="font-semibold">{d.nome}</span>{" "}
+                              <span className="text-green-200">({d.codigo})</span>
                             </button>
                           ))}
       
                         {drinks.filter(
                           (d) => {
                             const busca = (novoPedido.drinkBusca || "").toLowerCase();
-                            const nome = (d.nome || d.name || "").toLowerCase();
-                            const codigo = (d.codigo || d.code || d.id || "").toString().toLowerCase();
+                            const nome = (d.nome || "").toLowerCase();
+                            const codigo = (d.codigo || "").toString().toLowerCase();
                             return nome.includes(busca) || codigo.includes(busca);
                           }
                         ).length === 0 && (
