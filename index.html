@@ -1817,7 +1817,7 @@
             );
         };
 
-        <script type="text/babel" data-presets="env,react">
+        <script type="text/babel" data-type="module" data-presets="env,react">
           const App = () => {
             const [userRole, setUserRole] = React.useState(null);
         
@@ -1829,19 +1829,18 @@
             }
         
             switch (userRole) {
-              case 'atendente':
+              case "atendente":
                 return <AtendenteScreen onLogout={handleLogout} />;
-              case 'barista':
+              case "barista":
                 return <BaristaScreen onLogout={handleLogout} />;
-              case 'manager':
+              case "manager":
                 return <BarManagementSystem />;
               default:
                 return <LoginScreen onLogin={handleLogin} />;
             }
           };
         
-          ReactDOM.render(<App />, document.getElementById('root'));
+          ReactDOM.render(<App />, document.getElementById("root"));
         </script>
-
-        </body>
-</html>
+      </body>
+  </html>
