@@ -207,13 +207,8 @@
             try {
               setLoading(true);
             
-              const response = await fetch(`${API_URL}?action=login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  usuario: username.trim(),
-                  senha: password.trim(),
-                }),
+              const response = await fetch(`${API_URL}?action=login&usuario=${encodeURIComponent(username.trim())}&senha=${encodeURIComponent(password.trim())}`, {
+                method: 'GET',
               });
             
               const result = await response.json();
@@ -226,7 +221,7 @@
               }
             } catch (err) {
               console.error('Erro de login:', err);
-              setError('Erro ao conectar com o servidor.');
+              setError('Erro ao conectar com o servidor. Verifique sua conexão.');
             } finally {
               setLoading(false);
             }
@@ -1412,7 +1407,7 @@
                 </div>
 
                 <footer className="text-center text-purple-200 mt-10 text-sm">
-                  Crafted with ☕ by <span className="text-purple-200 font-semibold">LCSBR</span> – 2025
+                  Sistema de Gerenciamento © {new Date().getFullYear()}
                 </footer>
               </div>
             </div>
