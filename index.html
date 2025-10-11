@@ -421,11 +421,17 @@
               setLoading(false);
             }
           };
+        useEffect(() => {
+          let ativo = true; // 🔒 flag de controle para evitar updates após desmontar
         
-          useEffect(() => {
-            loadProdutos();
-            loadPedidos();
-          }, []);
+          loadProdutos();
+          loadPedidos();
+        
+          return () => {
+            ativo = false;
+            console.log("🧹 limpando intervalos e timeouts...");
+          };
+        }, []);
         
           // ----- REGISTRAR PEDIDO -----
           const addPedido = async () => {
@@ -469,7 +475,7 @@
               setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
           
               // recarrega lista com pequeno delay
-              setTimeout(loadPedidos, 1500);
+              timeoutId = setTimeout(loadPedidos, 1500);
             } catch (e) {
               console.error("❌ Erro ao conectar ao servidor:", e);
               showMessage("❌ Erro ao conectar ao servidor: " + e.message, "error");
