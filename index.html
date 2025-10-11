@@ -630,26 +630,25 @@
           );
         };
 
-        // Componente Barista - VERSÃO CORRIGIDA
+        // Componente Barista
         const BaristaScreen = ({ onLogout }) => {
           const [pedidos, setPedidos] = useState([]);
           const [loading, setLoading] = useState(true);
           const [mensagem, setMensagem] = useState("");
           const [processando, setProcessando] = useState(null);
         
-          // Carregar pedidos a cada 5s
+          // Carrega pedidos periodicamente
           useEffect(() => {
             let ativo = true;
         
             const carregarPedidos = async () => {
               try {
-                const response = await fetch(`${API_URL}?action=getPedidosData`);
-                const data = await response.json();
-                if (!ativo) return;
-                setPedidos(data.pedidos || []);
+                const r = await fetch(`${API_URL}?action=getPedidosData`);
+                const d = await r.json();
+                if (ativo) setPedidos(d.pedidos || []);
               } catch (err) {
                 console.error("Erro ao carregar pedidos:", err);
-                setMensagem("❌ Erro ao carregar pedidos.");
+                if (ativo) setMensagem("❌ Erro ao carregar pedidos.");
               } finally {
                 if (ativo) setLoading(false);
               }
@@ -664,43 +663,112 @@
             };
           }, []);
         
-          // Atualizar status do pedido - CORRIGIDO
-          const atualizarStatus = async (id, novoStatus) => {
+          const finalizarPedido = async (id) => {
             setProcessando(id);
             try {
-              const url = `${API_URL}?action=updateStatus`;
-              
-              const response = await fetch(url, {
+              const r = await fetch(`${API_URL}?action=updateStatus`, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify({ id, status: novoStatus }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, status: "concluido" }),
               });
-              
-              // Com no-cors não conseguimos ler a resposta, assumimos sucesso
-              console.log("📤 Status enviado:", novoStatus);
-              setMensagem("✅ Pedido concluído com sucesso!");
-              
-              // Aguarda 1 segundo e recarrega
-              setTimeout(async () => {
-                const r = await fetch(`${API_URL}?action=getPedidosData`);
-                const d = await r.json();
-                setPedidos(d.pedidos || []);
-                setProcessando(null);
-              }, 1000);
-              
+              const result = await r.json();
+              if (result.success) {
+                setMensagem("✅ Pedido finalizado!");
+                setPedidos((prev) => prev.filter((p) => p.id !== id));
+              } else {
+                setMensagem("⚠️ Erro ao finalizar pedido.");
+              }
             } catch (err) {
-              console.error("Erro ao atualizar pedido:", err);
-              setMensagem(`❌ Erro: ${err.message}`);
-              setProcessando(null);
+              console.error(err);
+              setMensagem("❌ Erro de conexão.");
             } finally {
+              setProcessando(null);
               setTimeout(() => setMensagem(""), 3000);
             }
           };
         
-          const pedidosPendentes = pedidos.filter(
-            (p) => p.status === "pendente"
+          const pedidosPendentes = pedidos.filter((p) => p.status === "pendente");
+        
+          if (loading) {
+            return (
+              <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+                <div className="text-center">
+                  <svg className="animate-spin w-12 h-12 text-white mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                  </svg>
+                  Carregando pedidos...
+                </div>
+              </div>
+            );
+          }
+        
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pb-10 p-4">
+              <div className="max-w-5xl mx-auto">
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
+                  <h1 className="text-3xl font-bold text-white">☕ Barista</h1>
+                  <button
+                    onClick={onLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <icons.LogOut /> Sair
+                  </button>
+                </div>
+        
+                {mensagem && (
+                  <div className="mb-4 p-3 rounded-lg text-center bg-white/10 text-white border border-white/20">
+                    {mensagem}
+                  </div>
+                )}
+        
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                  <h3 className="text-2xl font-bold text-white mb-4">Pedidos Pendentes</h3>
+                  {pedidosPendentes.length === 0 ? (
+                    <p className="text-purple-200 text-center py-6">Nenhum pedido pendente 🎉</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {pedidosPendentes.map((p) => (
+                        <div
+                          key={p.id}
+                          className="bg-white/10 border border-white/20 rounded-lg p-4 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="text-white font-semibold">
+                              {p.cliente} — <span className="text-purple-300">{p.produtoNome}</span>
+                            </p>
+                            <p className="text-purple-200 text-sm">
+                              #{p.numeroPedido} • {p.data} • {p.horaAbertura}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => finalizarPedido(p.id)}
+                            disabled={processando === p.id}
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {processando === p.id ? (
+                              <>
+                                <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                                </svg>
+                                Processando...
+                              </>
+                            ) : (
+                              <>
+                                <icons.Check /> Finalizar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           );
+        };
           
         // Componente Manager (mantido do original, mas com correções na API)
         const BarManagementSystem = ({ onLogout }) => {
