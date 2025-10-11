@@ -795,7 +795,16 @@
           const [purchases, setPurchases] = useState([]);
           const [sales, setSales] = useState([]);
           const [transactions, setTransactions] = useState([]);
-        
+         
+          const [showAddVenda, setShowAddVenda] = useState(false);
+          const [novaVenda, setNovaVenda] = useState({ produto: "", descricao: "", quantidade: "", data: "" });
+          
+          const [showAddCompra, setShowAddCompra] = useState(false);
+          const [novaCompra, setNovaCompra] = useState({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
+          
+          const [showAddTransacao, setShowAddTransacao] = useState(false);
+          const [novaTransacao, setNovaTransacao] = useState({ tipo: "", valor: "", descricao: "", data: "" });/
+         
           const [newProduct, setNewProduct] = useState({
             nome: '',
             categoria: '',
@@ -950,7 +959,77 @@
             setEditModalOpen(false);
             setEditingProduct(null);
           };
-        
+
+          // ====== NOVAS FUNÇÕES DE REGISTRO ======
+          const registrarVenda = async () => {
+            if (!novaVenda.produto || !novaVenda.descricao || !novaVenda.quantidade || !novaVenda.data) {
+              return showMessage("⚠️ Preencha todos os campos!", "error");
+            }
+            try {
+              const res = await fetch(`${API_URL}?action=addVenda`, {
+                method: "POST",
+                body: JSON.stringify(novaVenda),
+              });
+              const data = await res.json();
+              if (data.success) {
+                showMessage("✅ Venda registrada!", "success");
+                setShowAddVenda(false);
+                setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
+                loadAllData();
+              } else {
+                showMessage("❌ Erro ao registrar venda", "error");
+              }
+            } catch (err) {
+              showMessage("❌ Erro: " + err.message, "error");
+            }
+          };
+          
+          const registrarCompra = async () => {
+            if (!novaCompra.produto || !novaCompra.descricao || !novaCompra.quantidade || !novaCompra.valorUnitario || !novaCompra.data) {
+              return showMessage("⚠️ Preencha todos os campos!", "error");
+            }
+            try {
+              const res = await fetch(`${API_URL}?action=addCompra`, {
+                method: "POST",
+                body: JSON.stringify(novaCompra),
+              });
+              const data = await res.json();
+              if (data.success) {
+                showMessage("✅ Compra registrada!", "success");
+                setShowAddCompra(false);
+                setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
+                loadAllData();
+              } else {
+                showMessage("❌ Erro ao registrar compra", "error");
+              }
+            } catch (err) {
+              showMessage("❌ Erro: " + err.message, "error");
+            }
+          };
+          
+          const registrarTransacao = async () => {
+            if (!novaTransacao.tipo || !novaTransacao.valor || !novaTransacao.descricao || !novaTransacao.data) {
+              return showMessage("⚠️ Preencha todos os campos!", "error");
+            }
+            try {
+              const res = await fetch(`${API_URL}?action=addTransacao`, {
+                method: "POST",
+                body: JSON.stringify(novaTransacao),
+              });
+              const data = await res.json();
+              if (data.success) {
+                showMessage("✅ Movimento registrado!", "success");
+                setShowAddTransacao(false);
+                setNovaTransacao({ tipo: "", valor: "", descricao: "", data: "" });
+                loadAllData();
+              } else {
+                showMessage("❌ Erro ao registrar movimento", "error");
+              }
+            } catch (err) {
+              showMessage("❌ Erro: " + err.message, "error");
+            }
+          };
+          
           const stats = useMemo(() => {
             const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((s, t) => s + parseFloat(t.valor || 0), 0);
             const totalExpenses = transactions.filter(t => t.tipo === 'saida').reduce((s, t) => s + parseFloat(t.valor || 0), 0);
@@ -1095,6 +1174,30 @@
                 {activeTab === 'vendas' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Vendas</h3>
+                        {/* Botão Nova Venda */}
+                        <button
+                          onClick={() => setShowAddVenda(true)}
+                          className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+                        >
+                          + Nova Venda
+                        </button>
+                    
+                        {/* Modal Nova Venda */}
+                        {showAddVenda && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white/95 p-6 rounded-xl max-w-md w-full">
+                              <h3 className="text-xl font-bold mb-4">Registrar Venda</h3>
+                              <input className="w-full border p-2 mb-3 rounded" placeholder="Produto" value={novaVenda.produto} onChange={(e)=>setNovaVenda({...novaVenda,produto:e.target.value})}/>
+                              <input className="w-full border p-2 mb-3 rounded" placeholder="Descrição" value={novaVenda.descricao} onChange={(e)=>setNovaVenda({...novaVenda,descricao:e.target.value})}/>
+                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Quantidade" value={novaVenda.quantidade} onChange={(e)=>setNovaVenda({...novaVenda,quantidade:e.target.value})}/>
+                              <input type="date" className="w-full border p-2 mb-3 rounded" value={novaVenda.data} onChange={(e)=>setNovaVenda({...novaVenda,data:e.target.value})}/>
+                              <div className="flex justify-end gap-3">
+                                <button onClick={()=>setShowAddVenda(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
+                                <button onClick={registrarVenda} className="px-4 py-2 bg-green-500 text-white rounded">Salvar</button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                     <p className="text-purple-300 mb-4">Listagem das vendas registradas</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm text-left text-purple-100">
@@ -1131,6 +1234,31 @@
                 {activeTab === 'compras' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Compras</h3>
+                        {/* Botão Nova Compra */}
+                        <button
+                          onClick={() => setShowAddCompra(true)}
+                          className="mb-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+                        >
+                          + Nova Compra
+                        </button>
+                    
+                        {/* Modal Nova Compra */}
+                        {showAddCompra && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white/95 p-6 rounded-xl max-w-md w-full">
+                              <h3 className="text-xl font-bold mb-4">Registrar Compra</h3>
+                              <input className="w-full border p-2 mb-3 rounded" placeholder="Produto" value={novaCompra.produto} onChange={(e)=>setNovaCompra({...novaCompra,produto:e.target.value})}/>
+                              <input className="w-full border p-2 mb-3 rounded" placeholder="Descrição" value={novaCompra.descricao} onChange={(e)=>setNovaCompra({...novaCompra,descricao:e.target.value})}/>
+                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Quantidade" value={novaCompra.quantidade} onChange={(e)=>setNovaCompra({...novaCompra,quantidade:e.target.value})}/>
+                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Valor Unitário" value={novaCompra.valorUnitario} onChange={(e)=>setNovaCompra({...novaCompra,valorUnitario:e.target.value})}/>
+                              <input type="date" className="w-full border p-2 mb-3 rounded" value={novaCompra.data} onChange={(e)=>setNovaCompra({...novaCompra,data:e.target.value})}/>
+                              <div className="flex justify-end gap-3">
+                                <button onClick={()=>setShowAddCompra(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
+                                <button onClick={registrarCompra} className="px-4 py-2 bg-blue-500 text-white rounded">Salvar</button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm text-left text-purple-100">
                         <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
@@ -1273,6 +1401,34 @@
                 {activeTab === 'financeiro' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Financeiro</h3>
+                        {/* Botão Nova Transação */}
+                        <button
+                          onClick={() => setShowAddTransacao(true)}
+                          className="mb-4 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg"
+                        >
+                          + Novo Movimento
+                        </button>
+                    
+                        {/* Modal Nova Transação */}
+                        {showAddTransacao && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-white/95 p-6 rounded-xl max-w-md w-full">
+                              <h3 className="text-xl font-bold mb-4">Registrar Movimento</h3>
+                              <select className="w-full border p-2 mb-3 rounded" value={novaTransacao.tipo} onChange={(e)=>setNovaTransacao({...novaTransacao,tipo:e.target.value})}>
+                                <option value="">Selecione o tipo</option>
+                                <option value="entrada">Entrada</option>
+                                <option value="saida">Saída</option>
+                              </select>
+                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Valor" value={novaTransacao.valor} onChange={(e)=>setNovaTransacao({...novaTransacao,valor:e.target.value})}/>
+                              <input className="w-full border p-2 mb-3 rounded" placeholder="Descrição" value={novaTransacao.descricao} onChange={(e)=>setNovaTransacao({...novaTransacao,descricao:e.target.value})}/>
+                              <input type="date" className="w-full border p-2 mb-3 rounded" value={novaTransacao.data} onChange={(e)=>setNovaTransacao({...novaTransacao,data:e.target.value})}/>
+                              <div className="flex justify-end gap-3">
+                                <button onClick={()=>setShowAddTransacao(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
+                                <button onClick={registrarTransacao} className="px-4 py-2 bg-purple-500 text-white rounded">Salvar</button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <div className="bg-white/5 rounded-lg p-4">
                         <h4 className="text-white font-semibold mb-2">Saldo</h4>
