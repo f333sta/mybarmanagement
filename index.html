@@ -428,6 +428,7 @@
         
           // ----- REGISTRAR PEDIDO -----
           const addPedido = async () => {
+            if (enviando) return; // evita clique duplo
             if (!novoPedido.cliente || !novoPedido.drinkId) {
               return showMessage("⚠️ Informe o cliente e selecione o produto!", "error");
             }
@@ -451,33 +452,28 @@
             console.log("📤 Enviando pedido:", payload);
           
             try {
-              // Usar URLSearchParams para passar o action via query string
+              setEnviando(true);
               const url = `${API_URL}?action=addPedido`;
-              
-              const r = await fetch(url, {
+          
+              await fetch(url, {
                 method: "POST",
-                mode: "no-cors", // Adiciona no-cors para evitar problemas de CORS
-                headers: { 
-                  "Content-Type": "text/plain" // Mudado para text/plain
-                },
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify(payload),
               });
-              
-              // Como estamos usando no-cors, não conseguimos ler a resposta
-              // Vamos assumir sucesso e recarregar os pedidos
-              console.log("📨 Pedido enviado");
-              
+          
               showMessage("✅ Pedido cadastrado com sucesso!", "success");
+          
+              // limpa imediatamente
               setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
-              
-              // Aguarda 1 segundo antes de recarregar para dar tempo do servidor processar
-              setTimeout(() => {
-                loadPedidos();
-              }, 1000);
-              
+          
+              // recarrega lista com pequeno delay
+              setTimeout(loadPedidos, 1500);
             } catch (e) {
               console.error("❌ Erro ao conectar ao servidor:", e);
               showMessage("❌ Erro ao conectar ao servidor: " + e.message, "error");
+            } finally {
+              setEnviando(false);
             }
           };
         
@@ -582,11 +578,25 @@
         
                   <button
                     onClick={addPedido}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+                    disabled={enviando}
+                    className={`bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 ${
+                      enviando ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
-                    <icons.Plus /> Registrar Pedido
+                    {enviando ? (
+                      <>
+                        <svg className="animate-spin w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                        </svg>
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <icons.Plus /> Registrar Pedido
+                      </>
+                    )}
                   </button>
-                </div>
         
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                   <h3 className="text-2xl font-bold text-white mb-6">Pedidos Cadastrados</h3>
@@ -666,21 +676,19 @@
           const finalizarPedido = async (id) => {
             setProcessando(id);
             try {
-              const r = await fetch(`${API_URL}?action=updateStatus`, {
+              const url = `${API_URL}?action=updateStatus`;
+              await fetch(url, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                mode: "no-cors", // evita o erro de CORS
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({ id, status: "concluido" }),
               });
-              const result = await r.json();
-              if (result.success) {
-                setMensagem("✅ Pedido finalizado!");
-                setPedidos((prev) => prev.filter((p) => p.id !== id));
-              } else {
-                setMensagem("⚠️ Erro ao finalizar pedido.");
-              }
+          
+              setMensagem("✅ Pedido finalizado!");
+              setPedidos((prev) => prev.filter((p) => p.id !== id)); // remove localmente
             } catch (err) {
               console.error(err);
-              setMensagem("❌ Erro de conexão.");
+              setMensagem("❌ Erro ao conectar ao servidor.");
             } finally {
               setProcessando(null);
               setTimeout(() => setMensagem(""), 3000);
