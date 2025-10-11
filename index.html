@@ -679,11 +679,11 @@
               const url = `${API_URL}?action=updateStatus`;
               await fetch(url, {
                 method: "POST",
-                mode: "no-cors", // evita o erro de CORS
+                mode: "no-cors", // evita erro de CORS
                 headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({ id, status: "concluido" }),
               });
-          
+        
               setMensagem("✅ Pedido finalizado!");
               setPedidos((prev) => prev.filter((p) => p.id !== id)); // remove localmente
             } catch (err) {
