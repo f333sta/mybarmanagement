@@ -785,7 +785,7 @@
           );
         };
           
-        // Componente Manager (mantido do original, mas com correções na API)
+        // Componente Manager
         const BarManagementSystem = ({ onLogout }) => {
           const [activeTab, setActiveTab] = useState('dashboard');
           const [loading, setLoading] = useState(true);
@@ -1029,6 +1029,30 @@
               showMessage("❌ Erro: " + err.message, "error");
             }
           };
+        
+          function calcularValoresEstoque(produto, compras, vendas) {
+            const comprasDoProduto = compras.filter(c => c.produto === produto.nome || c.produto === produto.name);
+            const vendasDoProduto = vendas.filter(v => v.produto === produto.nome || v.produto === produto.name);
+        
+            let totalQuantidadeComprada = 0;
+            let totalValorComprado = 0;
+        
+            comprasDoProduto.forEach(c => {
+              const qtd = Number(c.quantidade) || 0;
+              const valor = Number(c.valorUnitario) || 0;
+              totalQuantidadeComprada += qtd;
+              totalValorComprado += qtd * valor;
+            });
+        
+            const custoMedio = totalQuantidadeComprada > 0
+              ? totalValorComprado / totalQuantidadeComprada
+              : Number(produto.precoCusto) || 0;
+        
+            const estoqueAtual = Number(produto.estoque ?? produto.stock ?? 0);
+            const valorTotal = custoMedio * estoqueAtual;
+        
+            return { custoMedio, valorTotal };
+          }
           
           const stats = useMemo(() => {
             const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((s, t) => s + parseFloat(t.valor || 0), 0);
@@ -1173,124 +1197,218 @@
         
                 {activeTab === 'vendas' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">Vendas</h3>
-                        {/* Botão Nova Venda */}
-                        <button
-                          onClick={() => setShowAddVenda(true)}
-                          className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
-                        >
-                          + Nova Venda
-                        </button>
-                    
-                        {/* Modal Nova Venda */}
-                        {showAddVenda && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className="bg-white/95 p-6 rounded-xl max-w-md w-full">
-                              <h3 className="text-xl font-bold mb-4">Registrar Venda</h3>
-                              <input className="w-full border p-2 mb-3 rounded" placeholder="Produto" value={novaVenda.produto} onChange={(e)=>setNovaVenda({...novaVenda,produto:e.target.value})}/>
-                              <input className="w-full border p-2 mb-3 rounded" placeholder="Descrição" value={novaVenda.descricao} onChange={(e)=>setNovaVenda({...novaVenda,descricao:e.target.value})}/>
-                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Quantidade" value={novaVenda.quantidade} onChange={(e)=>setNovaVenda({...novaVenda,quantidade:e.target.value})}/>
-                              <input type="date" className="w-full border p-2 mb-3 rounded" value={novaVenda.data} onChange={(e)=>setNovaVenda({...novaVenda,data:e.target.value})}/>
-                              <div className="flex justify-end gap-3">
-                                <button onClick={()=>setShowAddVenda(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
-                                <button onClick={registrarVenda} className="px-4 py-2 bg-green-500 text-white rounded">Salvar</button>
+                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
+                
+                    {/* Campos e busca de produto */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {/* 🔍 Campo de busca de produto (idêntico ao Atendente) */}
+                      <div className="relative col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Digite o nome ou código do produto"
+                          className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && filteredProdutos.length > 0 && (
+                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
+                            {filteredProdutos.map((produto) => (
+                              <div
+                                key={produto.id}
+                                className="p-2 hover:bg-white/10 cursor-pointer text-white"
+                                onClick={() => {
+                                  setSelectedProduto(produto);
+                                  setSearchTerm(`${produto.nome} (${produto.codigo})`);
+                                }}
+                              >
+                                {produto.nome} ({produto.codigo})
                               </div>
-                            </div>
+                            ))}
                           </div>
                         )}
-                    <p className="text-purple-300 mb-4">Listagem das vendas registradas</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left text-purple-100">
-                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-                          <tr>
-                            <th className="px-4 py-3">Nº</th>
-                            <th className="px-4 py-3">Produto</th>
-                            <th className="px-4 py-3">Quantidade</th>
-                            <th className="px-4 py-3">Total</th>
-                            <th className="px-4 py-3">Data</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sales.length === 0 ? (
-                            <tr><td colSpan="5" className="text-center py-6 text-purple-300">Nenhuma venda registrada</td></tr>
-                          ) : sales.map((s, idx) => {
-                            const prod = products.find(p => p.id == s.produtoId);
-                            return (
-                              <tr key={s.id || idx} className="border-b border-white/5">
-                                <td className="px-4 py-2">#{s.id || '-'}</td>
-                                <td className="px-4 py-2">{prod ? `${prod.nome} (${prod.codigo})` : '-'}</td>
-                                <td className="px-4 py-2">{s.quantidade}</td>
-                                <td className="px-4 py-2">R$ {parseFloat(s.total || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{s.data || '-'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                        {filteredProdutos.length === 0 && searchTerm && !selectedProduto && (
+                          <p className="text-purple-400 mt-1">
+                            Nenhum produto encontrado com "{searchTerm}"
+                          </p>
+                        )}
+                      </div>
+                
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaVenda.descricao}
+                        onChange={(e) =>
+                          setNovaVenda({ ...novaVenda, descricao: e.target.value })
+                        }
+                      />
+                      <input
+                        type="number"
+                        placeholder="Quantidade"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaVenda.quantidade}
+                        onChange={(e) =>
+                          setNovaVenda({ ...novaVenda, quantidade: e.target.value })
+                        }
+                      />
+                      <input
+                        type="date"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaVenda.data}
+                        onChange={(e) =>
+                          setNovaVenda({ ...novaVenda, data: e.target.value })
+                        }
+                      />
                     </div>
+                
+                    <button
+                      onClick={registrarVenda}
+                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
+                    >
+                      + Registrar Venda
+                    </button>
+                
+                    <h3 className="text-2xl font-bold text-white mt-10 mb-6">
+                      Vendas Registradas
+                    </h3>
+                
+                    <table className="min-w-full text-white text-sm">
+                      <thead>
+                        <tr className="border-b border-white/20">
+                          <th className="p-2 text-left">PRODUTO</th>
+                          <th className="p-2 text-left">DESCRIÇÃO</th>
+                          <th className="p-2 text-left">QUANTIDADE</th>
+                          <th className="p-2 text-left">DATA</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {vendas.map((v) => (
+                          <tr
+                            key={v.id}
+                            className="border-b border-white/10 hover:bg-white/5 transition"
+                          >
+                            <td className="p-2">{v.produto}</td>
+                            <td className="p-2">{v.descricao}</td>
+                            <td className="p-2">{v.quantidade}</td>
+                            <td className="p-2">{v.data}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
                 {activeTab === 'compras' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">Compras</h3>
-                        {/* Botão Nova Compra */}
-                        <button
-                          onClick={() => setShowAddCompra(true)}
-                          className="mb-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
-                        >
-                          + Nova Compra
-                        </button>
-                    
-                        {/* Modal Nova Compra */}
-                        {showAddCompra && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className="bg-white/95 p-6 rounded-xl max-w-md w-full">
-                              <h3 className="text-xl font-bold mb-4">Registrar Compra</h3>
-                              <input className="w-full border p-2 mb-3 rounded" placeholder="Produto" value={novaCompra.produto} onChange={(e)=>setNovaCompra({...novaCompra,produto:e.target.value})}/>
-                              <input className="w-full border p-2 mb-3 rounded" placeholder="Descrição" value={novaCompra.descricao} onChange={(e)=>setNovaCompra({...novaCompra,descricao:e.target.value})}/>
-                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Quantidade" value={novaCompra.quantidade} onChange={(e)=>setNovaCompra({...novaCompra,quantidade:e.target.value})}/>
-                              <input type="number" className="w-full border p-2 mb-3 rounded" placeholder="Valor Unitário" value={novaCompra.valorUnitario} onChange={(e)=>setNovaCompra({...novaCompra,valorUnitario:e.target.value})}/>
-                              <input type="date" className="w-full border p-2 mb-3 rounded" value={novaCompra.data} onChange={(e)=>setNovaCompra({...novaCompra,data:e.target.value})}/>
-                              <div className="flex justify-end gap-3">
-                                <button onClick={()=>setShowAddCompra(false)} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
-                                <button onClick={registrarCompra} className="px-4 py-2 bg-blue-500 text-white rounded">Salvar</button>
+                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Compra</h3>
+                
+                    {/* Campos e busca de produto */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      {/* 🔍 Campo de busca de produto (idêntico ao Atendente) */}
+                      <div className="relative col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Digite o nome ou código do produto"
+                          className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && filteredProdutos.length > 0 && (
+                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
+                            {filteredProdutos.map((produto) => (
+                              <div
+                                key={produto.id}
+                                className="p-2 hover:bg-white/10 cursor-pointer text-white"
+                                onClick={() => {
+                                  setSelectedProduto(produto);
+                                  setSearchTerm(`${produto.nome} (${produto.codigo})`);
+                                }}
+                              >
+                                {produto.nome} ({produto.codigo})
                               </div>
-                            </div>
+                            ))}
                           </div>
                         )}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left text-purple-100">
-                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-                          <tr>
-                            <th className="px-4 py-3">Nº</th>
-                            <th className="px-4 py-3">Produto</th>
-                            <th className="px-4 py-3">Quantidade</th>
-                            <th className="px-4 py-3">Total</th>
-                            <th className="px-4 py-3">Data</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {purchases.length === 0 ? (
-                            <tr><td colSpan="5" className="text-center py-6 text-purple-300">Nenhuma compra registrada</td></tr>
-                          ) : purchases.map((c, idx) => {
-                            const prod = products.find(p => p.id == c.produtoId);
-                            return (
-                              <tr key={c.id || idx} className="border-b border-white/5">
-                                <td className="px-4 py-2">#{c.id || '-'}</td>
-                                <td className="px-4 py-2">{prod ? `${prod.nome} (${prod.codigo})` : '-'}</td>
-                                <td className="px-4 py-2">{c.quantidade}</td>
-                                <td className="px-4 py-2">R$ {parseFloat(c.total || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{c.data || '-'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                        {filteredProdutos.length === 0 && searchTerm && !selectedProduto && (
+                          <p className="text-purple-400 mt-1">
+                            Nenhum produto encontrado com "{searchTerm}"
+                          </p>
+                        )}
+                      </div>
+                
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaCompra.descricao}
+                        onChange={(e) =>
+                          setNovaCompra({ ...novaCompra, descricao: e.target.value })
+                        }
+                      />
+                      <input
+                        type="number"
+                        placeholder="Quantidade"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaCompra.quantidade}
+                        onChange={(e) =>
+                          setNovaCompra({ ...novaCompra, quantidade: e.target.value })
+                        }
+                      />
+                      <input
+                        type="number"
+                        placeholder="Valor Unitário"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaCompra.valorUnitario}
+                        onChange={(e) =>
+                          setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })
+                        }
+                      />
+                      <input
+                        type="date"
+                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        value={novaCompra.data}
+                        onChange={(e) =>
+                          setNovaCompra({ ...novaCompra, data: e.target.value })
+                        }
+                      />
                     </div>
+                
+                    <button
+                      onClick={registrarCompra}
+                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
+                    >
+                      + Registrar Compra
+                    </button>
+                
+                    <h3 className="text-2xl font-bold text-white mt-10 mb-6">
+                      Compras Registradas
+                    </h3>
+                
+                    <table className="min-w-full text-white text-sm">
+                      <thead>
+                        <tr className="border-b border-white/20">
+                          <th className="p-2 text-left">PRODUTO</th>
+                          <th className="p-2 text-left">DESCRIÇÃO</th>
+                          <th className="p-2 text-left">QTD</th>
+                          <th className="p-2 text-left">VALOR UNIT.</th>
+                          <th className="p-2 text-left">DATA</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {compras.map((c) => (
+                          <tr key={c.id} className="border-b border-white/10 hover:bg-white/5 transition">
+                            <td className="p-2">{c.produto}</td>
+                            <td className="p-2">{c.descricao}</td>
+                            <td className="p-2">{c.quantidade}</td>
+                            <td className="p-2">{c.valorUnitario}</td>
+                            <td className="p-2">{c.data}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
-
+                
                 {activeTab === 'estoque' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Estoque</h3>
@@ -1302,32 +1420,70 @@
                             <th className="px-4 py-3">Produto</th>
                             <th className="px-4 py-3 text-center">Estoque</th>
                             <th className="px-4 py-3 text-center">Estoque Mínimo</th>
+                            <th className="px-4 py-3 text-center">Custo Médio</th>
+                            <th className="px-4 py-3 text-center">Valor Total</th>
                             <th className="px-4 py-3 text-center">Controla Estoque</th>
                             <th className="px-4 py-3 text-center">Ações</th>
                           </tr>
                         </thead>
                         <tbody>
                           {products.length === 0 ? (
-                            <tr><td colSpan="6" className="text-center py-6 text-purple-300">Nenhum produto cadastrado</td></tr>
-                          ) : products.map(prod => (
-                            <tr key={prod.codigo || prod.id} className="border-b border-white/5 hover:bg-white/5">
-                              <td className="px-4 py-2 text-center font-mono">{prod.codigo}</td>
-                              <td className="px-4 py-2">{prod.nome}</td>
-                              <td className="px-4 py-2 text-center">{prod.estoque ?? 0}</td>
-                              <td className="px-4 py-2 text-center">{prod.estoqueMinimo ?? 0}</td>
-                              <td className="px-4 py-2 text-center">{prod.controlaEstoque ? 'Sim' : 'Não'}</td>
-                              <td className="px-4 py-2 text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  <button onClick={() => openEditProduct(prod)} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center gap-2">
-                                    <icons.Edit />
-                                  </button>
-                                  <button onClick={() => openConfirm('delete', 'Excluir Produto', `Deseja excluir o produto "${prod.nome}" (${prod.codigo})?`, () => handleDeleteProduct(prod.id))} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg flex items-center gap-2">
-                                    <icons.Trash2 />
-                                  </button>
-                                </div>
+                            <tr>
+                              <td colSpan="8" className="text-center py-6 text-purple-300">
+                                Nenhum produto cadastrado
                               </td>
                             </tr>
-                          ))}
+                          ) : products.map(prod => {
+                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, compras, vendas);
+                
+                              return (
+                                <tr
+                                  key={prod.codigo || prod.id}
+                                  className="border-b border-white/5 hover:bg-white/5"
+                                >
+                                  <td className="px-4 py-2 text-center font-mono">{prod.codigo}</td>
+                                  <td className="px-4 py-2">{prod.nome || prod.name}</td>
+                                  <td className="px-4 py-2 text-center">{prod.estoque ?? prod.stock ?? 0}</td>
+                                  <td className="px-4 py-2 text-center">{prod.estoqueMinimo ?? 0}</td>
+                
+                                  {/* 💰 Novas colunas */}
+                                  <td className="px-4 py-2 text-center">
+                                    {custoMedio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                  </td>
+                                  <td className="px-4 py-2 text-center">
+                                    {valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                  </td>
+                
+                                  <td className="px-4 py-2 text-center">
+                                    {prod.controlaEstoque ? "Sim" : "Não"}
+                                  </td>
+                                  <td className="px-4 py-2 text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => openEditProduct(prod)}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center gap-2"
+                                      >
+                                        <icons.Edit />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          openConfirm(
+                                            "delete",
+                                            "Excluir Produto",
+                                            `Deseja excluir o produto "${prod.nome || prod.name}" (${prod.codigo})?`,
+                                            () => handleDeleteProduct(prod.id)
+                                          )
+                                        }
+                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg flex items-center gap-2"
+                                      >
+                                        <icons.Trash2 />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          }
                         </tbody>
                       </table>
                     </div>
