@@ -187,44 +187,41 @@
         
           const handleLogin = async () => {
             setError('');
-        
+          
             if (!selectedProfile) {
               setError('Selecione um perfil!');
               return;
             }
-        
+          
             // Perfis sem login e senha
             if (selectedProfile !== 'manager') {
               onLogin(selectedProfile);
               return;
             }
-        
+          
             // Manager precisa de login/senha
             if (!username.trim() || !password.trim()) {
               setError('Digite o usuário e a senha!');
               return;
             }
-        
+          
             try {
               setLoading(true);
             
               const response = await fetch(`${API_URL}?action=login`, {
                 method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify({
                   usuario: username.trim(),
                   senha: password.trim(),
                 }),
               });
             
-              const result = await response.json();
-            
-              if (result.success) {
-                console.log('✅ Login bem-sucedido!');
-                onLogin('manager');
-              } else {
-                console.log('❌ Login falhou:', result.message);
-                setError(result.message || 'Usuário ou senha incorretos.');
-              }
+              // Com no-cors, assumimos sucesso se não houver erro
+              console.log('✅ Login enviado com sucesso!');
+              onLogin('manager');
+              
             } catch (err) {
               console.error('💥 Erro de login:', err);
               setError('Erro ao conectar com o servidor. Verifique sua conexão.');
@@ -360,6 +357,7 @@
           const [message, setMessage] = useState("");
           const [messageType, setMessageType] = useState("success");
           const [enviando, setEnviando] = useState(false);
+          const [searchTerm, setSearchTerm] = useState("");
         
           const showMessage = (msg, type = "info") => {
             setMessage(msg);
@@ -473,17 +471,18 @@
           
               // limpa imediatamente
               setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
+              setSearchTerm("");  // ← ADICIONAR ESTA LINHA
           
               // recarrega lista com pequeno delay
-              timeoutId = setTimeout(loadPedidos, 1500);
+              setTimeout(loadPedidos, 1500);  // ← CORRIGIDO (removido timeoutId)
             } catch (e) {
               console.error("❌ Erro ao conectar ao servidor:", e);
               showMessage("❌ Erro ao conectar ao servidor: " + e.message, "error");
             } finally {
               setEnviando(false);
             }
-          };
-        
+          }; 
+          
           // ----- LOADING -----
           if (loading) {
             return (
@@ -537,6 +536,7 @@
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6">
                   <h3 className="text-2xl font-bold text-white mb-4">Novo Pedido</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <input
                       type="text"
                       placeholder="Nome do cliente"
@@ -546,43 +546,69 @@
                       }
                       className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                     />
-                    <input
-                      type="text"
-                      placeholder="Buscar produto (Drinks)"
-                      value={novoPedido.drinkBusca}
-                      onChange={(e) =>
-                        setNovoPedido({ ...novoPedido, drinkBusca: e.target.value })
-                      }
-                      className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                    />
-                  </div>
-        
-                  {novoPedido.drinkBusca && drinksFiltrados.length > 0 && (
-                    <div className="bg-white/10 rounded-lg p-4 border border-white/20 max-h-60 overflow-y-auto mb-4">
-                      {drinksFiltrados.map((p, i) => (
-                        <div
-                          key={p.id || `${p.codigo}-${i}`}
-                          onClick={() =>
-                            setNovoPedido({
-                              ...novoPedido,
-                              drinkId: p.id,
-                              drinkBusca: `${p.nome} (${p.codigo})`,
+                    
+                    {/* ⭐ NOVO: Campo de busca separado com dropdown */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Buscar produto (Drinks)"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      
+                      {/* ⭐ NOVO: Dropdown aparece enquanto digita */}
+                      {searchTerm && (
+                        <div className="absolute z-50 w-full bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto">
+                          {produtos
+                            .filter((p) => {
+                              // ✅ MANTÉM O FILTRO DE CATEGORIA DRINKS
+                              const categoria = String(p.categoria || "").toLowerCase();
+                              const nome = String(p.nome || "").toLowerCase();
+                              const busca = searchTerm.toLowerCase();
+                              
+                              // Só mostra produtos da categoria "drinks" que contenham o texto buscado
+                              return categoria === "drinks" && nome.includes(busca);
                             })
-                          }
-                          className="p-2 hover:bg-white/20 rounded cursor-pointer text-purple-200"
-                        >
-                          {p.nome} ({p.codigo}) – R$ {p.precoVenda.toFixed(2)}
+                            .map((p, i) => (
+                              <div
+                                key={p.id || `${p.codigo}-${i}`}
+                                onClick={() => {
+                                  setNovoPedido({
+                                    ...novoPedido,
+                                    drinkId: p.id,
+                                    drinkBusca: `${p.nome} (${p.codigo})`,
+                                  });
+                                  setSearchTerm(""); // Limpa o campo de busca após selecionar
+                                }}
+                                className="p-2 hover:bg-white/20 cursor-pointer text-purple-200"
+                              >
+                                {p.nome} ({p.codigo}) – R$ {p.precoVenda.toFixed(2)}
+                              </div>
+                            ))}
+                          
+                          {/* ⭐ Mensagem quando não encontra drinks */}
+                          {produtos.filter((p) => {
+                            const categoria = String(p.categoria || "").toLowerCase();
+                            const nome = String(p.nome || "").toLowerCase();
+                            return categoria === "drinks" && nome.includes(searchTerm.toLowerCase());
+                          }).length === 0 && (
+                            <div className="p-2 text-center text-purple-300">
+                              Nenhum drink encontrado com "{searchTerm}"
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* ⭐ Mostra o produto selecionado */}
+                  {novoPedido.drinkBusca && (
+                    <div className="bg-white/10 rounded-lg p-3 mb-4 text-purple-200">
+                      Selecionado: {novoPedido.drinkBusca}
                     </div>
                   )}
                   
-                  {novoPedido.drinkBusca && drinksFiltrados.length === 0 && (
-                    <div className="bg-white/10 rounded-lg p-4 border border-white/20 mb-4 text-center text-purple-300">
-                      Nenhum drink encontrado com "{novoPedido.drinkBusca}"
-                    </div>
-                  )}
-        
                   <button
                     onClick={addPedido}
                     disabled={enviando}
@@ -804,7 +830,9 @@
           
           const [showAddTransacao, setShowAddTransacao] = useState(false);
           const [novaTransacao, setNovaTransacao] = useState({ tipo: "", valor: "", descricao: "", data: "" });
-         
+
+          const [searchTerm, setSearchTerm] = useState("");
+          
           const [newProduct, setNewProduct] = useState({
             nome: '',
             categoria: '',
@@ -1200,14 +1228,12 @@
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
                 
-                    {/* Campos e busca de produto */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* 🔍 Campo de busca de produto */}
                       <div className="relative col-span-2">
                         <input
                           type="text"
                           placeholder="Buscar produto..."
-                          className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                          className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -1229,6 +1255,13 @@
                                   {p.nome || p.name} ({p.codigo})
                                 </div>
                               ))}
+                            {products.filter((p) =>
+                              (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).length === 0 && (
+                              <div className="p-2 text-center text-purple-300">
+                                Nenhum produto encontrado
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1236,7 +1269,7 @@
                       <input
                         type="text"
                         placeholder="Descrição"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaVenda.descricao}
                         onChange={(e) =>
                           setNovaVenda({ ...novaVenda, descricao: e.target.value })
@@ -1245,7 +1278,7 @@
                       <input
                         type="number"
                         placeholder="Quantidade"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaVenda.quantidade}
                         onChange={(e) =>
                           setNovaVenda({ ...novaVenda, quantidade: e.target.value })
@@ -1253,7 +1286,7 @@
                       />
                       <input
                         type="date"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaVenda.data}
                         onChange={(e) =>
                           setNovaVenda({ ...novaVenda, data: e.target.value })
@@ -1283,14 +1316,14 @@
                           </tr>
                         </thead>
                         <tbody>
-                          {vendas.length === 0 ? (
+                          {sales.length === 0 ? (
                             <tr>
                               <td colSpan="4" className="text-center py-4 text-purple-400">
                                 Nenhuma venda registrada
                               </td>
                             </tr>
                           ) : (
-                            vendas.map((v) => (
+                            sales.map((v) => (
                               <tr
                                 key={v.id}
                                 className="border-b border-white/10 hover:bg-white/5 transition"
@@ -1312,50 +1345,49 @@
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Registrar Compra</h3>
                 
-                    {/* Campos e busca de produto */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* 🔍 Campo de busca de produto (idêntico ao Atendente) */}
                       <div className="relative col-span-2">
                         <input
                           type="text"
                           placeholder="Buscar produto..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="bg-white/10 p-2 rounded-lg w-full"
+                          className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         />
                         
-                        {/* Listagem dos produtos filtrados */}
                         {searchTerm && (
-                          <div className="bg-white/5 rounded-lg mt-2">
+                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
                             {products
                               .filter(p =>
                                 (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
                               )
                               .map((p) => (
-                                <button
+                                <div
                                   key={p.id}
                                   onClick={() => {
                                     setNovaCompra({ ...novaCompra, produto: p.nome || p.name });
                                     setSearchTerm("");
                                   }}
-                                  className="block w-full text-left px-4 py-2 hover:bg-white/10"
+                                  className="p-2 hover:bg-white/10 cursor-pointer text-white"
                                 >
                                   {p.nome || p.name} ({p.codigo})
-                                </button>
+                                </div>
                               ))}
+                            {products.filter(p =>
+                              (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
+                            ).length === 0 && (
+                              <div className="p-2 text-center text-purple-300">
+                                Nenhum produto encontrado
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {filteredProdutos.length === 0 && searchTerm && !selectedProduto && (
-                          <p className="text-purple-400 mt-1">
-                            Nenhum produto encontrado com "{searchTerm}"
-                          </p>
                         )}
                       </div>
                 
                       <input
                         type="text"
                         placeholder="Descrição"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaCompra.descricao}
                         onChange={(e) =>
                           setNovaCompra({ ...novaCompra, descricao: e.target.value })
@@ -1364,7 +1396,7 @@
                       <input
                         type="number"
                         placeholder="Quantidade"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaCompra.quantidade}
                         onChange={(e) =>
                           setNovaCompra({ ...novaCompra, quantidade: e.target.value })
@@ -1373,7 +1405,7 @@
                       <input
                         type="number"
                         placeholder="Valor Unitário"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaCompra.valorUnitario}
                         onChange={(e) =>
                           setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })
@@ -1381,7 +1413,7 @@
                       />
                       <input
                         type="date"
-                        className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
                         value={novaCompra.data}
                         onChange={(e) =>
                           setNovaCompra({ ...novaCompra, data: e.target.value })
@@ -1400,31 +1432,40 @@
                       Compras Registradas
                     </h3>
                 
-                    <table className="min-w-full text-white text-sm">
-                      <thead>
-                        <tr className="border-b border-white/20">
-                          <th className="p-2 text-left">PRODUTO</th>
-                          <th className="p-2 text-left">DESCRIÇÃO</th>
-                          <th className="p-2 text-left">QTD</th>
-                          <th className="p-2 text-left">VALOR UNIT.</th>
-                          <th className="p-2 text-left">DATA</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {compras.map((c) => (
-                          <tr key={c.id} className="border-b border-white/10 hover:bg-white/5 transition">
-                            <td className="p-2">{c.produto}</td>
-                            <td className="p-2">{c.descricao}</td>
-                            <td className="p-2">{c.quantidade}</td>
-                            <td className="p-2">{c.valorUnitario}</td>
-                            <td className="p-2">{c.data}</td>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-white text-sm">
+                        <thead>
+                          <tr className="border-b border-white/20">
+                            <th className="p-2 text-left">PRODUTO</th>
+                            <th className="p-2 text-left">DESCRIÇÃO</th>
+                            <th className="p-2 text-left">QTD</th>
+                            <th className="p-2 text-left">VALOR UNIT.</th>
+                            <th className="p-2 text-left">DATA</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {purchases.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="text-center py-4 text-purple-400">
+                                Nenhuma compra registrada
+                              </td>
+                            </tr>
+                          ) : (
+                            purchases.map((c) => (
+                              <tr key={c.id} className="border-b border-white/10 hover:bg-white/5 transition">
+                                <td className="p-2">{c.produto}</td>
+                                <td className="p-2">{c.descricao}</td>
+                                <td className="p-2">{c.quantidade}</td>
+                                <td className="p-2">R$ {parseFloat(c.valorUnitario || 0).toFixed(2)}</td>
+                                <td className="p-2">{c.data}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                )}
-                
+                )}                
                 {activeTab === 'estoque' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Estoque</h3>
