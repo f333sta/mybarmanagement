@@ -497,16 +497,7 @@
               </div>
             );
           }
-        
-          // ----- FILTRAR APENAS DRINKS -----
-          const drinksFiltrados = produtos.filter((p) => {
-            if (!p || typeof p !== "object") return false;
-            const categoria = String(p.categoria || "").toLowerCase();
-            const nome = String(p.nome || "").toLowerCase();
-            const busca = String(novoPedido.drinkBusca || "").toLowerCase();
-            return categoria === "drinks" && (busca === "" || nome.includes(busca));
-          });
-        
+
           // ----- RENDER PRINCIPAL -----
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pb-10 p-4">
