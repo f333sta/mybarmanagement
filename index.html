@@ -1059,7 +1059,8 @@
             const totalExpenses = transactions.filter(t => t.tipo === 'saida').reduce((s, t) => s + parseFloat(t.valor || 0), 0);
             const totalProfit = sales.reduce((s, v) => s + parseFloat(v.lucro || 0), 0);
             const stockValue = products.reduce((s, p) => s + (parseFloat(p.estoque || 0) * parseFloat(p.precoCusto || 0)), 0);
-            const lowStock = products.filter(p => p.controlaEstoque && parseFloat(p.estoque || 0) < parseFloat(p.estoqueMinimo || 0) && parseFloat(p.estoqueMinimo || 0) > 0);
+            const lowStock = products.filter(p => p.controlaEstoque && parseFloat(p.estoque ?? p.stock ?? 0) < parseFloat(p.estoqueMinimo ?? 0) && parseFloat(p.estoqueMinimo ?? 0) > 0);
+
             return { totalRevenue, totalExpenses, totalProfit, stockValue, lowStock, balance: totalRevenue - totalExpenses };
           }, [transactions, sales, products]);
         
@@ -1201,35 +1202,34 @@
                 
                     {/* Campos e busca de produto */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* 🔍 Campo de busca de produto (idêntico ao Atendente) */}
+                      {/* 🔍 Campo de busca de produto */}
                       <div className="relative col-span-2">
                         <input
                           type="text"
-                          placeholder="Digite o nome ou código do produto"
+                          placeholder="Buscar produto..."
                           className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        {searchTerm && filteredProdutos.length > 0 && (
+                        {searchTerm && (
                           <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
-                            {filteredProdutos.map((produto) => (
-                              <div
-                                key={produto.id}
-                                className="p-2 hover:bg-white/10 cursor-pointer text-white"
-                                onClick={() => {
-                                  setSelectedProduto(produto);
-                                  setSearchTerm(`${produto.nome} (${produto.codigo})`);
-                                }}
-                              >
-                                {produto.nome} ({produto.codigo})
-                              </div>
-                            ))}
+                            {products
+                              .filter((p) =>
+                                (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
+                              )
+                              .map((p) => (
+                                <div
+                                  key={p.id}
+                                  className="p-2 hover:bg-white/10 cursor-pointer text-white"
+                                  onClick={() => {
+                                    setNovaVenda({ ...novaVenda, produto: p.nome || p.name });
+                                    setSearchTerm('');
+                                  }}
+                                >
+                                  {p.nome || p.name} ({p.codigo})
+                                </div>
+                              ))}
                           </div>
-                        )}
-                        {filteredProdutos.length === 0 && searchTerm && !selectedProduto && (
-                          <p className="text-purple-400 mt-1">
-                            Nenhum produto encontrado com "{searchTerm}"
-                          </p>
                         )}
                       </div>
                 
@@ -1272,29 +1272,39 @@
                       Vendas Registradas
                     </h3>
                 
-                    <table className="min-w-full text-white text-sm">
-                      <thead>
-                        <tr className="border-b border-white/20">
-                          <th className="p-2 text-left">PRODUTO</th>
-                          <th className="p-2 text-left">DESCRIÇÃO</th>
-                          <th className="p-2 text-left">QUANTIDADE</th>
-                          <th className="p-2 text-left">DATA</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {vendas.map((v) => (
-                          <tr
-                            key={v.id}
-                            className="border-b border-white/10 hover:bg-white/5 transition"
-                          >
-                            <td className="p-2">{v.produto}</td>
-                            <td className="p-2">{v.descricao}</td>
-                            <td className="p-2">{v.quantidade}</td>
-                            <td className="p-2">{v.data}</td>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-white text-sm">
+                        <thead>
+                          <tr className="border-b border-white/20">
+                            <th className="p-2 text-left">PRODUTO</th>
+                            <th className="p-2 text-left">DESCRIÇÃO</th>
+                            <th className="p-2 text-left">QUANTIDADE</th>
+                            <th className="p-2 text-left">DATA</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {vendas.length === 0 ? (
+                            <tr>
+                              <td colSpan="4" className="text-center py-4 text-purple-400">
+                                Nenhuma venda registrada
+                              </td>
+                            </tr>
+                          ) : (
+                            vendas.map((v) => (
+                              <tr
+                                key={v.id}
+                                className="border-b border-white/10 hover:bg-white/5 transition"
+                              >
+                                <td className="p-2">{v.produto}</td>
+                                <td className="p-2">{v.descricao}</td>
+                                <td className="p-2">{v.quantidade}</td>
+                                <td className="p-2">{v.data}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 
@@ -1308,25 +1318,31 @@
                       <div className="relative col-span-2">
                         <input
                           type="text"
-                          placeholder="Digite o nome ou código do produto"
-                          className="w-full border border-white/20 bg-transparent text-white p-2 rounded"
+                          placeholder="Buscar produto..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
+                          className="bg-white/10 p-2 rounded-lg w-full"
                         />
-                        {searchTerm && filteredProdutos.length > 0 && (
-                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
-                            {filteredProdutos.map((produto) => (
-                              <div
-                                key={produto.id}
-                                className="p-2 hover:bg-white/10 cursor-pointer text-white"
-                                onClick={() => {
-                                  setSelectedProduto(produto);
-                                  setSearchTerm(`${produto.nome} (${produto.codigo})`);
-                                }}
-                              >
-                                {produto.nome} ({produto.codigo})
-                              </div>
-                            ))}
+                        
+                        {/* Listagem dos produtos filtrados */}
+                        {searchTerm && (
+                          <div className="bg-white/5 rounded-lg mt-2">
+                            {products
+                              .filter(p =>
+                                (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
+                              )
+                              .map((p) => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => {
+                                    setNovaCompra({ ...novaCompra, produto: p.nome || p.name });
+                                    setSearchTerm("");
+                                  }}
+                                  className="block w-full text-left px-4 py-2 hover:bg-white/10"
+                                >
+                                  {p.nome || p.name} ({p.codigo})
+                                </button>
+                              ))}
                           </div>
                         )}
                         {filteredProdutos.length === 0 && searchTerm && !selectedProduto && (
