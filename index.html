@@ -722,12 +722,18 @@
           const finalizarPedido = async (id) => {
             setProcessando(id);
             try {
-              const url = `${API_URL}?action=updateStatus`;
-              const res = await fetch(url, {
+              const res = await fetch(`${API_URL}?action=updateStatus`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id, status: "concluido" }),
               });
+              const data = await res.json();
+              if (data.success) {
+                setMensagem("✅ Pedido finalizado!");
+                setPedidos(prev => prev.filter(p => p.id !== id));
+              } else {
+                setMensagem("❌ Falha ao finalizar pedido.");
+              }
           
               const data = await res.json();
               if (data.success) {
