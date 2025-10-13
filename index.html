@@ -1285,43 +1285,26 @@
         
                 {activeTab === "vendas" && (
                   <div className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Registrar Venda</h2>
-                
-                    <div className="bg-white/5 p-6 rounded-lg mb-6">
+                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Registrar Venda</h2>
+                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Campo de busca com filtro dinâmico */}
-                        <div className="relative">
+                        <div className="relative search-container">
                           <input
                             type="text"
                             placeholder="Buscar produto..."
-                            className="w-full p-3 rounded bg-white/10 text-white placeholder-white/40"
                             value={novaVenda.produto}
-                            onChange={(e) => {
-                              const valor = e.target.value;
-                              setNovaVenda({ ...novaVenda, produto: valor });
-                              const resultado = products.filter(p =>
-                                String(p.nome || "").toLowerCase().includes(valor.toLowerCase())
-                              );
-                              setSugestoesVenda(resultado);
-                            }}
-                            onFocus={() => setSugestoesVenda(products)}
+                            onChange={handleProdutoSearchVenda}
+                            className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-400"
                           />
-                          {sugestoesVenda.length > 0 && (
-                            <ul className="absolute z-10 bg-white/10 backdrop-blur-md mt-1 w-full rounded-lg max-h-48 overflow-auto border border-white/10">
-                              {sugestoesVenda.map((p, i) => (
+                          {produtoSugestoesVenda.length > 0 && (
+                            <ul className="absolute z-10 bg-purple-800 border border-purple-700 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
+                              {produtoSugestoesVenda.map((produto, index) => (
                                 <li
-                                  key={i}
-                                  className="px-3 py-2 hover:bg-white/20 cursor-pointer text-white"
-                                  onClick={() => {
-                                    setNovaVenda({
-                                      ...novaVenda,
-                                      produto: p.nome,
-                                      descricao: p.categoria || "",
-                                    });
-                                    setSugestoesVenda([]);
-                                  }}
+                                  key={index}
+                                  onClick={() => handleSelectProdutoVenda(produto)}
+                                  className="p-2 hover:bg-purple-700 cursor-pointer"
                                 >
-                                  {p.nome}
+                                  {produto.nome}
                                 </li>
                               ))}
                             </ul>
@@ -1331,106 +1314,88 @@
                         <input
                           type="text"
                           placeholder="Descrição"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
                           value={novaVenda.descricao}
                           onChange={(e) => setNovaVenda({ ...novaVenda, descricao: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
                         <input
                           type="number"
                           placeholder="Quantidade"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
                           value={novaVenda.quantidade}
                           onChange={(e) => setNovaVenda({ ...novaVenda, quantidade: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
                       </div>
                 
-                      <div className="mt-4 flex items-center gap-3">
+                      <div className="mt-3">
                         <input
                           type="date"
-                          className="p-3 rounded bg-white/10 text-white"
                           value={novaVenda.data}
                           onChange={(e) => setNovaVenda({ ...novaVenda, data: e.target.value })}
+                          className="w-full md:w-1/3 p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
-                        <button
-                          onClick={registrarVenda}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition"
-                        >
-                          + Registrar Venda
-                        </button>
                       </div>
+                
+                      <button
+                        onClick={registrarVenda}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                      >
+                        + Registrar Venda
+                      </button>
                     </div>
                 
-                    <h3 className="text-lg font-bold mb-3">Vendas Registradas</h3>
-                    {sales.length === 0 ? (
-                      <div className="bg-white/5 rounded-lg text-center text-white/60 py-6">
-                        Nenhuma venda registrada.
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead>
-                            <tr className="text-white/70">
-                              <th className="p-2">PRODUTO</th>
-                              <th className="p-2">DESCRIÇÃO</th>
-                              <th className="p-2">QTD</th>
-                              <th className="p-2">DATA</th>
+                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Vendas Registradas</h3>
+                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg">
+                      {vendas.length === 0 ? (
+                        <p className="text-purple-300 italic">Nenhuma venda registrada ainda.</p>
+                      ) : (
+                        <table className="w-full text-left text-purple-100 mt-3">
+                          <thead className="border-b border-purple-700 text-sm uppercase">
+                            <tr>
+                              <th>Produto</th>
+                              <th>Descrição</th>
+                              <th>Qtd</th>
+                              <th>Data</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {sales.map((v, i) => (
-                              <tr key={i} className="hover:bg-white/10 transition">
-                                <td className="p-2">{v.produto}</td>
-                                <td className="p-2">{v.descricao}</td>
-                                <td className="p-2">{v.quantidade}</td>
-                                <td className="p-2">{v.data}</td>
+                            {vendas.map((v, i) => (
+                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
+                                <td>{v.produto}</td>
+                                <td>{v.descricao}</td>
+                                <td>{v.quantidade}</td>
+                                <td>{v.data}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {activeTab === "compras" && (
                   <div className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Registrar Compra</h2>
-                
-                    <div className="bg-white/5 p-6 rounded-lg mb-6">
+                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Registrar Compra</h2>
+                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Campo de busca com filtro dinâmico */}
-                        <div className="relative">
+                        <div className="relative search-container">
                           <input
                             type="text"
                             placeholder="Buscar produto..."
-                            className="w-full p-3 rounded bg-white/10 text-white placeholder-white/40"
                             value={novaCompra.produto}
-                            onChange={(e) => {
-                              const valor = e.target.value;
-                              setNovaCompra({ ...novaCompra, produto: valor });
-                              const resultado = products.filter(p =>
-                                String(p.nome || "").toLowerCase().includes(valor.toLowerCase())
-                              );
-                              setSugestoesCompra(resultado);
-                            }}
-                            onFocus={() => setSugestoesCompra(products)}
+                            onChange={handleProdutoSearchCompra}
+                            className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-400"
                           />
-                          {sugestoesCompra.length > 0 && (
-                            <ul className="absolute z-10 bg-white/10 backdrop-blur-md mt-1 w-full rounded-lg max-h-48 overflow-auto border border-white/10">
-                              {sugestoesCompra.map((p, i) => (
+                          {produtoSugestoesCompra.length > 0 && (
+                            <ul className="absolute z-10 bg-purple-800 border border-purple-700 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
+                              {produtoSugestoesCompra.map((produto, index) => (
                                 <li
-                                  key={i}
-                                  className="px-3 py-2 hover:bg-white/20 cursor-pointer text-white"
-                                  onClick={() => {
-                                    setNovaCompra({
-                                      ...novaCompra,
-                                      produto: p.nome,
-                                      descricao: p.categoria || "",
-                                    });
-                                    setSugestoesCompra([]);
-                                  }}
+                                  key={index}
+                                  onClick={() => handleSelectProdutoCompra(produto)}
+                                  className="p-2 hover:bg-purple-700 cursor-pointer"
                                 >
-                                  {p.nome}
+                                  {produto.nome}
                                 </li>
                               ))}
                             </ul>
@@ -1440,141 +1405,130 @@
                         <input
                           type="text"
                           placeholder="Descrição"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
                           value={novaCompra.descricao}
                           onChange={(e) => setNovaCompra({ ...novaCompra, descricao: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
                         <input
                           type="number"
                           placeholder="Quantidade"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
                           value={novaCompra.quantidade}
                           onChange={(e) => setNovaCompra({ ...novaCompra, quantidade: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
+                      </div>
+                
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                         <input
                           type="number"
                           placeholder="Valor Unitário"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
                           value={novaCompra.valorUnitario}
                           onChange={(e) => setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
-                      </div>
-                
-                      <div className="mt-4 flex items-center gap-3">
                         <input
                           type="date"
-                          className="p-3 rounded bg-white/10 text-white"
                           value={novaCompra.data}
                           onChange={(e) => setNovaCompra({ ...novaCompra, data: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
-                        <button
-                          onClick={registrarCompra}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition"
-                        >
-                          + Registrar Compra
-                        </button>
                       </div>
+                
+                      <button
+                        onClick={registrarCompra}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                      >
+                        + Registrar Compra
+                      </button>
                     </div>
                 
-                    <h3 className="text-lg font-bold mb-3">Compras Registradas</h3>
-                    {purchases.length === 0 ? (
-                      <div className="bg-white/5 rounded-lg text-center text-white/60 py-6">
-                        Nenhuma compra registrada.
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead>
-                            <tr className="text-white/70">
-                              <th className="p-2">PRODUTO</th>
-                              <th className="p-2">DESCRIÇÃO</th>
-                              <th className="p-2">QTD</th>
-                              <th className="p-2">VALOR UNIT.</th>
-                              <th className="p-2">DATA</th>
+                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Compras Registradas</h3>
+                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg">
+                      {compras.length === 0 ? (
+                        <p className="text-purple-300 italic">Nenhuma compra registrada ainda.</p>
+                      ) : (
+                        <table className="w-full text-left text-purple-100 mt-3">
+                          <thead className="border-b border-purple-700 text-sm uppercase">
+                            <tr>
+                              <th>Produto</th>
+                              <th>Descrição</th>
+                              <th>Qtd</th>
+                              <th>Valor Unit.</th>
+                              <th>Data</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {purchases.map((c, i) => (
-                              <tr key={i} className="hover:bg-white/10 transition">
-                                <td className="p-2">{c.produto}</td>
-                                <td className="p-2">{c.descricao}</td>
-                                <td className="p-2">{c.quantidade}</td>
-                                <td className="p-2">R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
-                                <td className="p-2">{c.data}</td>
+                            {compras.map((c, i) => (
+                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
+                                <td>{c.produto}</td>
+                                <td>{c.descricao}</td>
+                                <td>{c.quantidade}</td>
+                                <td>R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
+                                <td>{c.data}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {activeTab === "estoque" && (
                   <div className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Controle de Estoque</h2>
-                
-                    <div className="bg-white/5 p-6 rounded-lg mb-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Controle de Estoque</h2>
+                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
+                      <div className="flex gap-3 mb-4">
                         <input
                           type="text"
                           placeholder="Buscar produto..."
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40 w-full"
-                          value={buscaEstoque}
-                          onChange={(e) => setBuscaEstoque(e.target.value)}
+                          value={filtroEstoque}
+                          onChange={(e) => setFiltroEstoque(e.target.value)}
+                          className="flex-1 p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
-                        <div className="flex items-center justify-end">
-                          <button
-                            onClick={() => setBuscaEstoque("")}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition"
-                          >
-                            Limpar Filtro
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => setFiltroEstoque("")}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold"
+                        >
+                          Limpar Filtro
+                        </button>
                       </div>
-                    </div>
                 
-                    {filteredProducts.length === 0 ? (
-                      <div className="bg-white/5 text-center text-white/60 py-6 rounded-lg">
-                        Nenhum produto encontrado.
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead>
-                            <tr className="text-white/70">
-                              <th className="p-2">CÓDIGO</th>
-                              <th className="p-2">PRODUTO</th>
-                              <th className="p-2">CATEGORIA</th>
-                              <th className="p-2 text-center">ESTOQUE</th>
-                              <th className="p-2 text-center">MIN.</th>
-                              <th className="p-2 text-right">CUSTO MÉDIO</th>
-                              <th className="p-2 text-right">VALOR TOTAL</th>
+                      <table className="w-full text-left text-purple-100">
+                        <thead className="border-b border-purple-700 text-sm uppercase">
+                          <tr>
+                            <th>Código</th>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Estoque</th>
+                            <th>Min.</th>
+                            <th>Custo Médio</th>
+                            <th>Valor Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {produtosFiltrados.length === 0 ? (
+                            <tr>
+                              <td colSpan="7" className="text-center text-purple-300 py-3 italic">
+                                Nenhum produto encontrado.
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {filteredProducts.map((prod, i) => {
-                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
-                              const isLow = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
-                              return (
-                                <tr
-                                  key={i}
-                                  className={`hover:bg-white/10 transition ${isLow ? "border-l-4 border-red-500" : ""}`}
-                                >
-                                  <td className="p-2">{prod.codigo}</td>
-                                  <td className="p-2">{prod.nome}</td>
-                                  <td className="p-2">{prod.categoria}</td>
-                                  <td className="p-2 text-center">{prod.estoque}</td>
-                                  <td className="p-2 text-center">{prod.estoqueMinimo}</td>
-                                  <td className="p-2 text-right">R$ {Number(custoMedio || 0).toFixed(2)}</td>
-                                  <td className="p-2 text-right">R$ {Number(valorTotal || 0).toFixed(2)}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                          ) : (
+                            produtosFiltrados.map((p, i) => (
+                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
+                                <td>{p.codigo}</td>
+                                <td>{p.nome}</td>
+                                <td>{p.categoria}</td>
+                                <td>{p.estoque}</td>
+                                <td>{p.minimo}</td>
+                                <td>R$ {Number(p.custoMedio || 0).toFixed(2)}</td>
+                                <td>R$ {Number(p.valorTotal || 0).toFixed(2)}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
 
@@ -1644,100 +1598,81 @@
 
                 {activeTab === "financeiro" && (
                   <div className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Registrar Transação</h2>
-                
-                    <div className="bg-white/5 p-6 rounded-lg mb-6">
+                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Controle Financeiro</h2>
+                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Descrição"
+                          value={novaTransacao.descricao}
+                          onChange={(e) => setNovaTransacao({ ...novaTransacao, descricao: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
+                        />
                         <select
-                          className="p-3 rounded bg-white/10 text-white"
                           value={novaTransacao.tipo}
-                          onChange={(e) =>
-                            setNovaTransacao({ ...novaTransacao, tipo: e.target.value })
-                          }
+                          onChange={(e) => setNovaTransacao({ ...novaTransacao, tipo: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100"
                         >
                           <option value="">Selecione o tipo</option>
                           <option value="entrada">Entrada</option>
                           <option value="saida">Saída</option>
                         </select>
-                
                         <input
                           type="number"
-                          placeholder="Valor"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          placeholder="Valor (R$)"
                           value={novaTransacao.valor}
-                          onChange={(e) =>
-                            setNovaTransacao({ ...novaTransacao, valor: e.target.value })
-                          }
+                          onChange={(e) => setNovaTransacao({ ...novaTransacao, valor: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
-                
-                        <input
-                          type="text"
-                          placeholder="Descrição"
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
-                          value={novaTransacao.descricao}
-                          onChange={(e) =>
-                            setNovaTransacao({ ...novaTransacao, descricao: e.target.value })
-                          }
-                        />
-                
                         <input
                           type="date"
-                          className="p-3 rounded bg-white/10 text-white"
                           value={novaTransacao.data}
-                          onChange={(e) =>
-                            setNovaTransacao({ ...novaTransacao, data: e.target.value })
-                          }
+                          onChange={(e) => setNovaTransacao({ ...novaTransacao, data: e.target.value })}
+                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
                         />
                       </div>
                 
-                      <div className="mt-4">
-                        <button
-                          onClick={registrarTransacao}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition"
-                        >
-                          + Registrar Transação
-                        </button>
-                      </div>
+                      <button
+                        onClick={registrarTransacao}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                      >
+                        + Registrar Transação
+                      </button>
                     </div>
                 
-                    <h3 className="text-lg font-bold mb-3">Transações Registradas</h3>
-                
-                    {transactions.length === 0 ? (
-                      <div className="bg-white/5 rounded-lg text-center text-white/60 py-6">
-                        Nenhuma transação registrada.
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
-                        <table className="w-full text-left text-sm">
-                          <thead>
-                            <tr className="text-white/70">
-                              <th className="p-2">TIPO</th>
-                              <th className="p-2">VALOR</th>
-                              <th className="p-2">DESCRIÇÃO</th>
-                              <th className="p-2">DATA</th>
+                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Transações Registradas</h3>
+                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg">
+                      {transacoes.length === 0 ? (
+                        <p className="text-purple-300 italic">Nenhuma transação registrada ainda.</p>
+                      ) : (
+                        <table className="w-full text-left text-purple-100 mt-3">
+                          <thead className="border-b border-purple-700 text-sm uppercase">
+                            <tr>
+                              <th>Descrição</th>
+                              <th>Tipo</th>
+                              <th>Valor</th>
+                              <th>Data</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {transactions.map((t, i) => (
-                              <tr key={i} className="hover:bg-white/10 transition">
+                            {transacoes.map((t, i) => (
+                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
+                                <td>{t.descricao}</td>
                                 <td
-                                  className={`p-2 font-semibold ${
+                                  className={`font-semibold ${
                                     t.tipo === "entrada" ? "text-green-400" : "text-red-400"
                                   }`}
                                 >
                                   {t.tipo}
                                 </td>
-                                <td className="p-2">
-                                  R$ {Number(t.valor || 0).toFixed(2)}
-                                </td>
-                                <td className="p-2">{t.descricao}</td>
-                                <td className="p-2">{t.data}</td>
+                                <td>R$ {Number(t.valor || 0).toFixed(2)}</td>
+                                <td>{t.data}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1803,7 +1738,17 @@
             </div>
           );
         };
-          
+
+        document.addEventListener("click", (e) => {
+          document.querySelectorAll(".search-container").forEach((container) => {
+            const suggestionsList = container.querySelector(".suggestions-list");
+            if (suggestionsList && !container.contains(e.target)) {
+              suggestionsList.innerHTML = "";
+              suggestionsList.classList.add("hidden");
+            }
+          });
+        });
+
         const App = () => {
           const [userRole, setUserRole] = useState(null);
       
