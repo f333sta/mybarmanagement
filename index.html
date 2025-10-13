@@ -883,22 +883,7 @@
             if (!res.ok) throw new Error("Erro na requisição: " + res.status + " " + res.statusText);
             return res.json();
           }
-          
-          async function loadAllData() {
-            try {
-              const productsResp = await fetchJSON(`${API_URL}?action=getProdutos`);
-              const purchasesResp = await fetchJSON(`${API_URL}?action=getCompras`);
-              const salesResp = await fetchJSON(`${API_URL}?action=getVendas`);
-          
-              setProducts(Array.isArray(productsResp) ? productsResp : (productsResp.data || productsResp.produtos || []));
-              setPurchases(Array.isArray(purchasesResp) ? purchasesResp : (purchasesResp.data || purchasesResp.compras || []));
-              setSales(Array.isArray(salesResp) ? salesResp : (salesResp.data || salesResp.vendas || []));
-            } catch (err) {
-              console.error("Erro ao carregar dados:", err);
-              showMessage("❌ Erro ao carregar dados: " + err.message, "error");
-            }
-          }
-          
+                    
           useEffect(() => { loadAllData(); }, [loadAllData]);
 
           async function debugApis() {
