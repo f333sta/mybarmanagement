@@ -999,17 +999,17 @@
               });
           
               const data = await res.json();
-              console.log("✅ Venda:", data);
+              console.log("✅ Venda registrada:", data);
           
               if (data.success) {
-                showMessage("✅ Venda registrada!", "success");
+                showMessage("✅ Venda registrada com sucesso!", "success");
                 setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
                 loadAllData();
               } else {
-                showMessage("❌ Erro ao registrar venda", "error");
+                showMessage("❌ Erro ao registrar venda.", "error");
               }
             } catch (err) {
-              console.error("Erro ao registrar Venda:", err);
+              console.error("Erro ao registrar venda:", err);
               showMessage("❌ Erro: " + err.message, "error");
             }
           };
@@ -1033,14 +1033,14 @@
               });
           
               const data = await res.json();
-              console.log("✅ Compra:", data);
+              console.log("✅ Compra registrada:", data);
           
               if (data.success) {
-                showMessage("✅ Compra registrada!", "success");
+                showMessage("✅ Compra registrada com sucesso!", "success");
                 setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
                 loadAllData();
               } else {
-                showMessage("❌ Erro ao registrar compra", "error");
+                showMessage("❌ Erro ao registrar compra.", "error");
               }
             } catch (err) {
               console.error("Erro ao registrar compra:", err);
@@ -1072,31 +1072,29 @@
           };
         
           function calcularValoresEstoque(produto, purchasesList = [], salesList = []) {
-            const comprasDoProduto = (purchasesList || []).filter(c =>
-              String(c.produto || c.produtoNome || '').toLowerCase() === String(produto.nome || produto.name || produto.codigo || '').toLowerCase()
-            );
-            const vendasDoProduto = (salesList || []).filter(v =>
-              String(v.produto || v.produtoNome || '').toLowerCase() === String(produto.nome || produto.name || produto.codigo || '').toLowerCase()
+            const comprasDoProduto = (purchasesList || []).filter(
+              (c) => String(c.produto || "").toLowerCase() === String(produto.nome || "").toLowerCase()
             );
           
-            let totalQuantidadeComprada = 0;
-            let totalValorComprado = 0;
+            const vendasDoProduto = (salesList || []).filter(
+              (v) => String(v.produto || "").toLowerCase() === String(produto.nome || "").toLowerCase()
+            );
           
-            comprasDoProduto.forEach(c => {
-              const qtd = Number(c.quantidade) || 0;
-              const valor = Number(c.valorUnitario || c.valor || 0) || 0;
-              totalQuantidadeComprada += qtd;
-              totalValorComprado += qtd * valor;
+            let qtdComprada = 0,
+              valorComprado = 0;
+          
+            comprasDoProduto.forEach((c) => {
+              const q = Number(c.quantidade) || 0;
+              const v = Number(c.valorUnitario) || 0;
+              qtdComprada += q;
+              valorComprado += q * v;
             });
           
-            const custoMedio = totalQuantidadeComprada > 0
-              ? (totalValorComprado / totalQuantidadeComprada)
-              : (Number(produto.precoCusto) || 0);
+            const custoMedio = qtdComprada > 0 ? valorComprado / qtdComprada : 0;
+            const estoqueAtual = Number(produto.estoque || 0);
+            const valorTotal = estoqueAtual * custoMedio;
           
-            const estoqueAtual = Number(produto.estoque ?? produto.stock ?? 0) - (vendasDoProduto.reduce((s, v) => s + (Number(v.quantidade) || 0), 0));
-            const valorTotal = custoMedio * (estoqueAtual || 0);
-          
-            return { custoMedio: Number(custoMedio) || 0, valorTotal: Number(valorTotal) || 0 };
+            return { custoMedio, valorTotal };
           }
           
           const stats = useMemo(() => {
@@ -1244,52 +1242,56 @@
                 {activeTab === "vendas" && (
                   <div className="p-6">
                     <h2 className="text-xl font-bold mb-4">Registrar Venda</h2>
-                    <div className="flex flex-col md:flex-row gap-2 mb-4">
-                      <input
-                        type="text"
-                        placeholder="Buscar produto..."
-                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaVenda.produto}
-                        onChange={(e) => setNovaVenda({ ...novaVenda, produto: e.target.value })}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Descrição"
-                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaVenda.descricao}
-                        onChange={(e) => setNovaVenda({ ...novaVenda, descricao: e.target.value })}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Quantidade"
-                        className="w-32 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaVenda.quantidade}
-                        onChange={(e) => setNovaVenda({ ...novaVenda, quantidade: e.target.value })}
-                      />
-                      <input
-                        type="date"
-                        className="w-44 p-2 rounded bg-white/10 text-white"
-                        value={novaVenda.data}
-                        onChange={(e) => setNovaVenda({ ...novaVenda, data: e.target.value })}
-                      />
+                
+                    <div className="bg-white/5 p-4 rounded-lg mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Buscar produto..."
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaVenda.produto}
+                          onChange={(e) => setNovaVenda({ ...novaVenda, produto: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Descrição"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaVenda.descricao}
+                          onChange={(e) => setNovaVenda({ ...novaVenda, descricao: e.target.value })}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Quantidade"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaVenda.quantidade}
+                          onChange={(e) => setNovaVenda({ ...novaVenda, quantidade: e.target.value })}
+                        />
+                        <input
+                          type="date"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaVenda.data}
+                          onChange={(e) => setNovaVenda({ ...novaVenda, data: e.target.value })}
+                        />
+                      </div>
+                
                       <button
                         onClick={registrarVenda}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+                        className="bg-green-500 hover:bg-green-600 text-white font-semibold mt-4 px-6 py-2 rounded-lg transition"
                       >
                         + Registrar Venda
                       </button>
                     </div>
                 
-                    <h2 className="text-xl font-bold mt-6 mb-2">Vendas Registradas</h2>
+                    <h3 className="text-lg font-bold mb-3">Vendas Registradas</h3>
                 
                     {sales.length === 0 ? (
-                      <div className="text-center text-white/60 mt-4">
+                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
                         Nenhuma venda registrada.
                       </div>
                     ) : (
-                      <table className="w-full text-left mt-2 border-separate border-spacing-y-2">
+                      <table className="w-full text-left text-sm border-separate border-spacing-y-2">
                         <thead>
-                          <tr className="text-white/70 text-sm">
+                          <tr className="text-white/70">
                             <th>PRODUTO</th>
                             <th>DESCRIÇÃO</th>
                             <th>QUANTIDADE</th>
@@ -1314,59 +1316,63 @@
                 {activeTab === "compras" && (
                   <div className="p-6">
                     <h2 className="text-xl font-bold mb-4">Registrar Compra</h2>
-                    <div className="flex flex-col md:flex-row gap-2 mb-4">
-                      <input
-                        type="text"
-                        placeholder="Buscar produto..."
-                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaCompra.produto}
-                        onChange={(e) => setNovaCompra({ ...novaCompra, produto: e.target.value })}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Descrição"
-                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaCompra.descricao}
-                        onChange={(e) => setNovaCompra({ ...novaCompra, descricao: e.target.value })}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Quantidade"
-                        className="w-32 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaCompra.quantidade}
-                        onChange={(e) => setNovaCompra({ ...novaCompra, quantidade: e.target.value })}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Valor Unitário"
-                        className="w-44 p-2 rounded bg-white/10 text-white placeholder-white/40"
-                        value={novaCompra.valorUnitario}
-                        onChange={(e) => setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })}
-                      />
-                      <input
-                        type="date"
-                        className="w-44 p-2 rounded bg-white/10 text-white"
-                        value={novaCompra.data}
-                        onChange={(e) => setNovaCompra({ ...novaCompra, data: e.target.value })}
-                      />
+                
+                    <div className="bg-white/5 p-4 rounded-lg mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Buscar produto..."
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaCompra.produto}
+                          onChange={(e) => setNovaCompra({ ...novaCompra, produto: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Descrição"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaCompra.descricao}
+                          onChange={(e) => setNovaCompra({ ...novaCompra, descricao: e.target.value })}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Quantidade"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaCompra.quantidade}
+                          onChange={(e) => setNovaCompra({ ...novaCompra, quantidade: e.target.value })}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Valor Unitário"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaCompra.valorUnitario}
+                          onChange={(e) => setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })}
+                        />
+                        <input
+                          type="date"
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
+                          value={novaCompra.data}
+                          onChange={(e) => setNovaCompra({ ...novaCompra, data: e.target.value })}
+                        />
+                      </div>
+                
                       <button
                         onClick={registrarCompra}
-                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+                        className="bg-green-500 hover:bg-green-600 text-white font-semibold mt-4 px-6 py-2 rounded-lg transition"
                       >
                         + Registrar Compra
                       </button>
                     </div>
                 
-                    <h2 className="text-xl font-bold mt-6 mb-2">Compras Registradas</h2>
+                    <h3 className="text-lg font-bold mb-3">Compras Registradas</h3>
                 
                     {purchases.length === 0 ? (
-                      <div className="text-center text-white/60 mt-4">
+                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
                         Nenhuma compra registrada.
                       </div>
                     ) : (
-                      <table className="w-full text-left mt-2 border-separate border-spacing-y-2">
+                      <table className="w-full text-left text-sm border-separate border-spacing-y-2">
                         <thead>
-                          <tr className="text-white/70 text-sm">
+                          <tr className="text-white/70">
                             <th>PRODUTO</th>
                             <th>DESCRIÇÃO</th>
                             <th>QTD</th>
@@ -1380,7 +1386,7 @@
                               <td className="p-2">{c.produto}</td>
                               <td className="p-2">{c.descricao}</td>
                               <td className="p-2">{c.quantidade}</td>
-                              <td className="p-2">R$ {Number(c.valorUnitario).toFixed(2)}</td>
+                              <td className="p-2">R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
                               <td className="p-2">{c.data}</td>
                             </tr>
                           ))}
@@ -1395,45 +1401,47 @@
                     <h2 className="text-xl font-bold mb-4">Controle de Estoque</h2>
                 
                     {products.length === 0 ? (
-                      <div className="text-center text-white/60 mt-8">
+                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
                         Nenhum produto cadastrado.
                       </div>
                     ) : (
-                      <table className="w-full text-left border-separate border-spacing-y-2">
-                        <thead>
-                          <tr className="text-white/70 text-sm">
-                            <th>CÓDIGO</th>
-                            <th>PRODUTO</th>
-                            <th>CATEGORIA</th>
-                            <th>ESTOQUE</th>
-                            <th>MIN.</th>
-                            <th>CUSTO MÉDIO</th>
-                            <th>VALOR TOTAL</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {products.map((prod, i) => {
-                            const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
-                            const isLow = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
-                            return (
-                              <tr
-                                key={i}
-                                className={`bg-white/5 hover:bg-white/10 transition ${
-                                  isLow ? "border-l-4 border-red-500" : ""
-                                }`}
-                              >
-                                <td className="p-2">{prod.codigo}</td>
-                                <td className="p-2">{prod.nome}</td>
-                                <td className="p-2">{prod.categoria}</td>
-                                <td className="p-2 font-semibold">{prod.estoque}</td>
-                                <td className="p-2">{prod.estoqueMinimo}</td>
-                                <td className="p-2">R$ {custoMedio.toFixed(2)}</td>
-                                <td className="p-2">R$ {valorTotal.toFixed(2)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                      <div className="bg-white/5 p-4 rounded-lg">
+                        <table className="w-full text-left text-sm border-separate border-spacing-y-2">
+                          <thead>
+                            <tr className="text-white/70">
+                              <th>CÓDIGO</th>
+                              <th>PRODUTO</th>
+                              <th>CATEGORIA</th>
+                              <th>ESTOQUE</th>
+                              <th>MIN.</th>
+                              <th>CUSTO MÉDIO</th>
+                              <th>VALOR TOTAL</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {products.map((prod, i) => {
+                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
+                              const lowStock = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
+                              return (
+                                <tr
+                                  key={i}
+                                  className={`bg-white/5 hover:bg-white/10 transition ${
+                                    lowStock ? "border-l-4 border-red-500" : ""
+                                  }`}
+                                >
+                                  <td className="p-2">{prod.codigo}</td>
+                                  <td className="p-2">{prod.nome}</td>
+                                  <td className="p-2">{prod.categoria}</td>
+                                  <td className="p-2 font-semibold">{prod.estoque}</td>
+                                  <td className="p-2">{prod.estoqueMinimo}</td>
+                                  <td className="p-2">R$ {custoMedio.toFixed(2)}</td>
+                                  <td className="p-2">R$ {valorTotal.toFixed(2)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 )}
