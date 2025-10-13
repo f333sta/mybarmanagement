@@ -1055,28 +1055,32 @@
             }
           };
         
-          function calcularValoresEstoque(produto, compras, vendas) {
-            const comprasDoProduto = compras.filter(c => c.produto === produto.nome || c.produto === produto.name);
-            const vendasDoProduto = vendas.filter(v => v.produto === produto.nome || v.produto === produto.name);
-        
+          function calcularValoresEstoque(produto, purchasesList = [], salesList = []) {
+            const comprasDoProduto = (purchasesList || []).filter(c =>
+              String(c.produto || c.produtoNome || '').toLowerCase() === String(produto.nome || produto.name || produto.codigo || '').toLowerCase()
+            );
+            const vendasDoProduto = (salesList || []).filter(v =>
+              String(v.produto || v.produtoNome || '').toLowerCase() === String(produto.nome || produto.name || produto.codigo || '').toLowerCase()
+            );
+          
             let totalQuantidadeComprada = 0;
             let totalValorComprado = 0;
-        
+          
             comprasDoProduto.forEach(c => {
               const qtd = Number(c.quantidade) || 0;
-              const valor = Number(c.valorUnitario) || 0;
+              const valor = Number(c.valorUnitario || c.valor || 0) || 0;
               totalQuantidadeComprada += qtd;
               totalValorComprado += qtd * valor;
             });
-        
+          
             const custoMedio = totalQuantidadeComprada > 0
-              ? totalValorComprado / totalQuantidadeComprada
-              : Number(produto.precoCusto) || 0;
-        
-            const estoqueAtual = Number(produto.estoque ?? produto.stock ?? 0);
-            const valorTotal = custoMedio * estoqueAtual;
-        
-            return { custoMedio, valorTotal };
+              ? (totalValorComprado / totalQuantidadeComprada)
+              : (Number(produto.precoCusto) || 0);
+          
+            const estoqueAtual = Number(produto.estoque ?? produto.stock ?? 0) - (vendasDoProduto.reduce((s, v) => s + (Number(v.quantidade) || 0), 0));
+            const valorTotal = custoMedio * (estoqueAtual || 0);
+          
+            return { custoMedio: Number(custoMedio) || 0, valorTotal: Number(valorTotal) || 0 };
           }
           
           const stats = useMemo(() => {
@@ -1488,7 +1492,7 @@
                               </td>
                             </tr>
                           ) : products.map(prod => {
-                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, compras, vendas);
+                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
                 
                               return (
                                 <tr
