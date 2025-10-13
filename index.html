@@ -485,9 +485,9 @@
               setEnviando(true);
               const url = `${API_URL}?action=addPedido`;
           
-              await fetch(url, {
+              await fetch(`${API_URL}?action=addPedido`, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
               });
           
@@ -730,20 +730,12 @@
               const data = await res.json();
               if (data.success) {
                 setMensagem("✅ Pedido finalizado!");
-                setPedidos(prev => prev.filter(p => p.id !== id));
-              } else {
-                setMensagem("❌ Falha ao finalizar pedido.");
-              }
-          
-              const data = await res.json();
-              if (data.success) {
-                setMensagem("✅ Pedido finalizado!");
                 setPedidos((prev) => prev.filter((p) => p.id !== id));
               } else {
-                setMensagem("❌ " + (data.message || "Falha ao atualizar status"));
+                setMensagem("❌ " + (data.message || "Falha ao atualizar status."));
               }
             } catch (err) {
-              console.error(err);
+              console.error("Erro:", err);
               setMensagem("❌ Erro ao conectar ao servidor.");
             } finally {
               setProcessando(null);
@@ -1279,7 +1271,7 @@
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h1 className="text-3xl font-bold text-white mb-2">🍺 MyBarManagement</h1>
+                      <h1 className="text-3xl font-bold text-white mb-2">🍺 MyBar</h1>
                       <p className="text-purple-200">Controle completo de vendas, estoque e financeiro</p>
                     </div>
                     <div className="flex items-center gap-3">
