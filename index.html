@@ -207,20 +207,28 @@
           
             try {
               setLoading(true);
-            
-              const response = await fetch(`${API_URL}?action=login`, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({
-                  usuario: username.trim(),
-                  senha: password.trim(),
-                }),
+              
+              // ✅ NOVA IMPLEMENTAÇÃO: GET com query params
+              const url = `${API_URL}?action=login&usuario=${encodeURIComponent(username.trim())}&senha=${encodeURIComponent(password.trim())}`;
+              
+              const response = await fetch(url, {
+                method: 'GET',
               });
-            
-              // Com no-cors, assumimos sucesso se não houver erro
-              console.log('✅ Login enviado com sucesso!');
-              onLogin('manager');
+              
+              // ✅ Agora podemos ler a resposta JSON
+              const data = await response.json();
+              
+              console.log('📦 Resposta do servidor:', data);
+              
+              // ✅ Valida o sucesso real do login
+              if (data.success) {
+                console.log('✅ Login bem-sucedido!');
+                onLogin('manager');
+              } else {
+                // ✅ Exibe mensagem de erro do servidor
+                setError(data.message || 'Usuário ou senha incorretos');
+                console.log('❌ Login falhou:', data.message);
+              }
               
             } catch (err) {
               console.error('💥 Erro de login:', err);
