@@ -852,7 +852,25 @@
             setMessage(txt); setMessageType(type);
             setTimeout(() => setMessage(''), 3500);
           };
-        
+
+          const [buscaVenda, setBuscaVenda] = useState("");
+          const [buscaCompra, setBuscaCompra] = useState("");
+
+          const [buscaEstoque, setBuscaEstoque] = useState("");
+
+          const filteredProducts = products.filter(p =>
+            String(p.nome || "").toLowerCase().includes(buscaEstoque.toLowerCase())
+          );
+
+          const vendasFiltradas = sales.filter(v =>
+            String(v.produto || "").toLowerCase().includes(buscaVenda.toLowerCase())
+          );
+          
+          const comprasFiltradas = purchases.filter(c =>
+            String(c.produto || "").toLowerCase().includes(buscaCompra.toLowerCase())
+          );
+
+          
           const openConfirm = (type, title, message, onConfirm) =>
             setConfirmModal({ isOpen: true, type, title, message, onConfirm });
         
@@ -1111,6 +1129,14 @@
           
             return { custoMedio, valorTotal };
           }
+
+          function filtrarLista(lista, termo, campos = []) {
+            if (!termo) return lista;
+            const busca = termo.toLowerCase();
+            return lista.filter((item) =>
+              campos.some((campo) => String(item[campo] || "").toLowerCase().includes(busca))
+            );
+          }
           
           const stats = useMemo(() => {
             const totalRevenue = transactions.filter(t => t.tipo === 'entrada').reduce((s, t) => s + parseFloat(t.valor || 0), 0);
@@ -1258,15 +1284,25 @@
                   <div className="p-6">
                     <h2 className="text-xl font-bold mb-4">Registrar Venda</h2>
                 
-                    <div className="bg-white/5 p-4 rounded-lg mb-6">
+                    <div className="bg-white/5 p-6 rounded-lg mb-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Buscar produto..."
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
-                          value={novaVenda.produto}
-                          onChange={(e) => setNovaVenda({ ...novaVenda, produto: e.target.value })}
-                        />
+                        {/* Campo de busca com auto-complete */}
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Buscar produto..."
+                            className="w-full p-3 rounded bg-white/10 text-white placeholder-white/40"
+                            value={novaVenda.produto}
+                            onChange={(e) => setNovaVenda({ ...novaVenda, produto: e.target.value })}
+                            list="produtosVenda"
+                          />
+                          <datalist id="produtosVenda">
+                            {products.map((p, i) => (
+                              <option key={i} value={p.nome} />
+                            ))}
+                          </datalist>
+                        </div>
+                
                         <input
                           type="text"
                           placeholder="Descrição"
@@ -1283,7 +1319,7 @@
                         />
                       </div>
                 
-                      <div className="mt-3 flex items-center gap-3">
+                      <div className="mt-4 flex items-center gap-3">
                         <input
                           type="date"
                           className="p-3 rounded bg-white/10 text-white"
@@ -1292,7 +1328,7 @@
                         />
                         <button
                           onClick={registrarVenda}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg"
+                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition"
                         >
                           + Registrar Venda
                         </button>
@@ -1302,23 +1338,23 @@
                     <h3 className="text-lg font-bold mb-3">Vendas Registradas</h3>
                 
                     {sales.length === 0 ? (
-                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
+                      <div className="bg-white/5 rounded-lg text-center text-white/60 py-6">
                         Nenhuma venda registrada.
                       </div>
                     ) : (
-                      <div className="bg-white/5 p-2 rounded-lg">
+                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
                         <table className="w-full text-left text-sm">
                           <thead>
                             <tr className="text-white/70">
                               <th className="p-2">PRODUTO</th>
                               <th className="p-2">DESCRIÇÃO</th>
-                              <th className="p-2">QUANTIDADE</th>
+                              <th className="p-2">QTD</th>
                               <th className="p-2">DATA</th>
                             </tr>
                           </thead>
                           <tbody>
                             {sales.map((v, i) => (
-                              <tr key={i} className="bg-white/5 hover:bg-white/10">
+                              <tr key={i} className="hover:bg-white/10 transition">
                                 <td className="p-2">{v.produto}</td>
                                 <td className="p-2">{v.descricao}</td>
                                 <td className="p-2">{v.quantidade}</td>
@@ -1336,15 +1372,33 @@
                   <div className="p-6">
                     <h2 className="text-xl font-bold mb-4">Registrar Compra</h2>
                 
-                    <div className="bg-white/5 p-4 rounded-lg mb-6">
+                    <div className="bg-white/5 p-6 rounded-lg mb-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Buscar produto..."
-                          className="p-3 rounded bg-white/10 text-white placeholder-white/40"
-                          value={novaCompra.produto}
-                          onChange={(e) => setNovaCompra({ ...novaCompra, produto: e.target.value })}
-                        />
+                        {/* Campo de busca com auto-complete */}
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Buscar produto..."
+                            className="w-full p-3 rounded bg-white/10 text-white placeholder-white/40"
+                            value={novaCompra.produto}
+                            onChange={(e) => {
+                              const nome = e.target.value;
+                              const prod = products.find((p) => p.nome === nome);
+                              setNovaCompra({
+                                ...novaCompra,
+                                produto: nome,
+                                descricao: prod ? prod.categoria : "",
+                              });
+                            }}
+                            list="produtosCompra"
+                          />
+                          <datalist id="produtosCompra">
+                            {products.map((p, i) => (
+                              <option key={i} value={p.nome} />
+                            ))}
+                          </datalist>
+                        </div>
+                
                         <input
                           type="text"
                           placeholder="Descrição"
@@ -1352,6 +1406,7 @@
                           value={novaCompra.descricao}
                           onChange={(e) => setNovaCompra({ ...novaCompra, descricao: e.target.value })}
                         />
+                
                         <input
                           type="number"
                           placeholder="Quantidade"
@@ -1368,7 +1423,7 @@
                         />
                       </div>
                 
-                      <div className="mt-3 flex items-center gap-3">
+                      <div className="mt-4 flex items-center gap-3">
                         <input
                           type="date"
                           className="p-3 rounded bg-white/10 text-white"
@@ -1377,7 +1432,7 @@
                         />
                         <button
                           onClick={registrarCompra}
-                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg"
+                          className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition"
                         >
                           + Registrar Compra
                         </button>
@@ -1387,11 +1442,11 @@
                     <h3 className="text-lg font-bold mb-3">Compras Registradas</h3>
                 
                     {purchases.length === 0 ? (
-                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
+                      <div className="bg-white/5 rounded-lg text-center text-white/60 py-6">
                         Nenhuma compra registrada.
                       </div>
                     ) : (
-                      <div className="bg-white/5 p-2 rounded-lg">
+                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
                         <table className="w-full text-left text-sm">
                           <thead>
                             <tr className="text-white/70">
@@ -1404,7 +1459,7 @@
                           </thead>
                           <tbody>
                             {purchases.map((c, i) => (
-                              <tr key={i} className="bg-white/5 hover:bg-white/10">
+                              <tr key={i} className="hover:bg-white/10 transition">
                                 <td className="p-2">{c.produto}</td>
                                 <td className="p-2">{c.descricao}</td>
                                 <td className="p-2">{c.quantidade}</td>
@@ -1418,42 +1473,65 @@
                     )}
                   </div>
                 )}
-                
+
                 {activeTab === "estoque" && (
                   <div className="p-6">
                     <h2 className="text-xl font-bold mb-4">Controle de Estoque</h2>
                 
-                    {products.length === 0 ? (
-                      <div className="text-center text-white/60 py-6 bg-white/5 rounded-lg">
-                        Nenhum produto cadastrado.
+                    <div className="bg-white/5 p-6 rounded-lg mb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Buscar produto..."
+                          className="p-3 rounded bg-white/10 text-white placeholder-white/40 w-full"
+                          value={buscaEstoque}
+                          onChange={(e) => setBuscaEstoque(e.target.value)}
+                        />
+                        <div className="flex items-center justify-end">
+                          <button
+                            onClick={() => setBuscaEstoque("")}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition"
+                          >
+                            Limpar Filtro
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                
+                    {filteredProducts.length === 0 ? (
+                      <div className="bg-white/5 text-center text-white/60 py-6 rounded-lg">
+                        Nenhum produto encontrado.
                       </div>
                     ) : (
-                      <div className="bg-white/5 p-4 rounded-lg">
+                      <div className="bg-white/5 p-4 rounded-lg overflow-auto">
                         <table className="w-full text-left text-sm">
                           <thead>
                             <tr className="text-white/70">
                               <th className="p-2">CÓDIGO</th>
                               <th className="p-2">PRODUTO</th>
                               <th className="p-2">CATEGORIA</th>
-                              <th className="p-2">ESTOQUE</th>
-                              <th className="p-2">MIN.</th>
-                              <th className="p-2">CUSTO MÉDIO</th>
-                              <th className="p-2">VALOR TOTAL</th>
+                              <th className="p-2 text-center">ESTOQUE</th>
+                              <th className="p-2 text-center">MIN.</th>
+                              <th className="p-2 text-right">CUSTO MÉDIO</th>
+                              <th className="p-2 text-right">VALOR TOTAL</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {products.map((prod, i) => {
+                            {filteredProducts.map((prod, i) => {
                               const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
-                              const low = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
+                              const isLow = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
                               return (
-                                <tr key={i} className={`bg-white/5 hover:bg-white/10 ${low ? "border-l-4 border-red-500" : ""}`}>
+                                <tr
+                                  key={i}
+                                  className={`hover:bg-white/10 transition ${isLow ? "border-l-4 border-red-500" : ""}`}
+                                >
                                   <td className="p-2">{prod.codigo}</td>
                                   <td className="p-2">{prod.nome}</td>
                                   <td className="p-2">{prod.categoria}</td>
-                                  <td className="p-2 font-semibold">{prod.estoque}</td>
-                                  <td className="p-2">{prod.estoqueMinimo}</td>
-                                  <td className="p-2">R$ {Number(custoMedio || 0).toFixed(2)}</td>
-                                  <td className="p-2">R$ {Number(valorTotal || 0).toFixed(2)}</td>
+                                  <td className="p-2 text-center">{prod.estoque}</td>
+                                  <td className="p-2 text-center">{prod.estoqueMinimo}</td>
+                                  <td className="p-2 text-right">R$ {Number(custoMedio || 0).toFixed(2)}</td>
+                                  <td className="p-2 text-right">R$ {Number(valorTotal || 0).toFixed(2)}</td>
                                 </tr>
                               );
                             })}
