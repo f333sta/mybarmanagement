@@ -860,7 +860,22 @@
 
           const [sugestoesCompra, setSugestoesCompra] = useState([]);
           const [sugestoesVenda, setSugestoesVenda] = useState([]);
-          
+
+          useEffect(() => {
+            const handler = (e) => {
+              document.querySelectorAll(".search-container").forEach((container) => {
+                const suggestionsList = container.querySelector(".suggestions-list");
+                if (suggestionsList && !container.contains(e.target)) {
+                  const id = suggestionsList.id || "";
+                  if (id.includes("compra")) setSugestoesCompra([]);
+                  if (id.includes("venda")) setSugestoesVenda([]);
+                }
+              });
+            };
+            document.addEventListener("click", handler);
+            return () => document.removeEventListener("click", handler);
+          }, []);
+                           
           const filteredProducts = products.filter(p =>
             String(p.nome || "").toLowerCase().includes(buscaEstoque.toLowerCase())
           );
@@ -1226,25 +1241,7 @@
             }));
             setSugestoesVenda([]);
           };
-          
-          // Fecha listas de sugestões ao clicar fora (guarda múltiplos containers)
-          useEffect(() => {
-            const handler = (e) => {
-              document.querySelectorAll(".search-container").forEach((container) => {
-                const suggestionsList = container.querySelector(".suggestions-list");
-                if (suggestionsList && !container.contains(e.target)) {
-                  // limpa sugestões via estado para manter React em sincronia:
-                  // detecta se este container pertence a compra ou venda a partir do id do ul
-                  const id = suggestionsList.id || "";
-                  if (id.includes("compra")) setSugestoesCompra([]);
-                  if (id.includes("venda")) setSugestoesVenda([]);
-                }
-              });
-            };
-            document.addEventListener("click", handler);
-            return () => document.removeEventListener("click", handler);
-          }, [setSugestoesCompra, setSugestoesVenda]);
-        
+                  
           return (
             <div className="min-h-screen pb-10 p-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
               <div className="max-w-7xl mx-auto">
