@@ -990,44 +990,60 @@
             if (!novaVenda.produto || !novaVenda.descricao || !novaVenda.quantidade || !novaVenda.data) {
               return showMessage("⚠️ Preencha todos os campos!", "error");
             }
+          
             try {
               const res = await fetch(`${API_URL}?action=addVenda`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(novaVenda),
               });
+          
               const data = await res.json();
+              console.log("✅ Venda:", data);
+          
               if (data.success) {
                 showMessage("✅ Venda registrada!", "success");
-                setShowAddVenda(false);
                 setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
                 loadAllData();
               } else {
                 showMessage("❌ Erro ao registrar venda", "error");
               }
             } catch (err) {
+              console.error("Erro ao registrar Venda:", err);
               showMessage("❌ Erro: " + err.message, "error");
             }
           };
           
           const registrarCompra = async () => {
-            if (!novaCompra.produto || !novaCompra.descricao || !novaCompra.quantidade || !novaCompra.valorUnitario || !novaCompra.data) {
+            if (
+              !novaCompra.produto ||
+              !novaCompra.descricao ||
+              !novaCompra.quantidade ||
+              !novaCompra.valorUnitario ||
+              !novaCompra.data
+            ) {
               return showMessage("⚠️ Preencha todos os campos!", "error");
             }
+          
             try {
               const res = await fetch(`${API_URL}?action=addCompra`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(novaCompra),
               });
+          
               const data = await res.json();
+              console.log("✅ Compra:", data);
+          
               if (data.success) {
                 showMessage("✅ Compra registrada!", "success");
-                setShowAddCompra(false);
                 setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
                 loadAllData();
               } else {
                 showMessage("❌ Erro ao registrar compra", "error");
               }
             } catch (err) {
+              console.error("Erro ao registrar compra:", err);
               showMessage("❌ Erro: " + err.message, "error");
             }
           };
@@ -1225,326 +1241,200 @@
                   </div>
                 )}
         
-                {activeTab === 'vendas' && (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
-                
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="relative col-span-2">
-                        <input
-                          type="text"
-                          placeholder="Buscar produto..."
-                          className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {searchTerm && (
-                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
-                            {products
-                              .filter((p) =>
-                                (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
-                              )
-                              .map((p) => (
-                                <div
-                                  key={p.id}
-                                  className="p-2 hover:bg-white/10 cursor-pointer text-white"
-                                  onClick={() => {
-                                    setNovaVenda({ ...novaVenda, produto: p.nome || p.name });
-                                    setSearchTerm('');
-                                  }}
-                                >
-                                  {p.nome || p.name} ({p.codigo})
-                                </div>
-                              ))}
-                            {products.filter((p) =>
-                              (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
-                            ).length === 0 && (
-                              <div className="p-2 text-center text-purple-300">
-                                Nenhum produto encontrado
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                
+                {activeTab === "vendas" && (
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold mb-4">Registrar Venda</h2>
+                    <div className="flex flex-col md:flex-row gap-2 mb-4">
+                      <input
+                        type="text"
+                        placeholder="Buscar produto..."
+                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
+                        value={novaVenda.produto}
+                        onChange={(e) => setNovaVenda({ ...novaVenda, produto: e.target.value })}
+                      />
                       <input
                         type="text"
                         placeholder="Descrição"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
                         value={novaVenda.descricao}
-                        onChange={(e) =>
-                          setNovaVenda({ ...novaVenda, descricao: e.target.value })
-                        }
+                        onChange={(e) => setNovaVenda({ ...novaVenda, descricao: e.target.value })}
                       />
                       <input
                         type="number"
                         placeholder="Quantidade"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="w-32 p-2 rounded bg-white/10 text-white placeholder-white/40"
                         value={novaVenda.quantidade}
-                        onChange={(e) =>
-                          setNovaVenda({ ...novaVenda, quantidade: e.target.value })
-                        }
+                        onChange={(e) => setNovaVenda({ ...novaVenda, quantidade: e.target.value })}
                       />
                       <input
                         type="date"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="w-44 p-2 rounded bg-white/10 text-white"
                         value={novaVenda.data}
-                        onChange={(e) =>
-                          setNovaVenda({ ...novaVenda, data: e.target.value })
-                        }
+                        onChange={(e) => setNovaVenda({ ...novaVenda, data: e.target.value })}
                       />
+                      <button
+                        onClick={registrarVenda}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+                      >
+                        + Registrar Venda
+                      </button>
                     </div>
                 
-                    <button
-                      onClick={registrarVenda}
-                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
-                    >
-                      + Registrar Venda
-                    </button>
+                    <h2 className="text-xl font-bold mt-6 mb-2">Vendas Registradas</h2>
                 
-                    <h3 className="text-2xl font-bold text-white mt-10 mb-6">
-                      Vendas Registradas
-                    </h3>
-                
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-white text-sm">
+                    {sales.length === 0 ? (
+                      <div className="text-center text-white/60 mt-4">
+                        Nenhuma venda registrada.
+                      </div>
+                    ) : (
+                      <table className="w-full text-left mt-2 border-separate border-spacing-y-2">
                         <thead>
-                          <tr className="border-b border-white/20">
-                            <th className="p-2 text-left">PRODUTO</th>
-                            <th className="p-2 text-left">DESCRIÇÃO</th>
-                            <th className="p-2 text-left">QUANTIDADE</th>
-                            <th className="p-2 text-left">DATA</th>
+                          <tr className="text-white/70 text-sm">
+                            <th>PRODUTO</th>
+                            <th>DESCRIÇÃO</th>
+                            <th>QUANTIDADE</th>
+                            <th>DATA</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {sales.length === 0 ? (
-                            <tr>
-                              <td colSpan="4" className="text-center py-4 text-purple-400">
-                                Nenhuma venda registrada
-                              </td>
+                          {sales.map((v, i) => (
+                            <tr key={i} className="bg-white/5 hover:bg-white/10">
+                              <td className="p-2">{v.produto}</td>
+                              <td className="p-2">{v.descricao}</td>
+                              <td className="p-2">{v.quantidade}</td>
+                              <td className="p-2">{v.data}</td>
                             </tr>
-                          ) : (
-                            sales.map((v) => (
-                              <tr
-                                key={v.id}
-                                className="border-b border-white/10 hover:bg-white/5 transition"
-                              >
-                                <td className="p-2">{v.produto}</td>
-                                <td className="p-2">{v.descricao}</td>
-                                <td className="p-2">{v.quantidade}</td>
-                                <td className="p-2">{v.data}</td>
-                              </tr>
-                            ))
-                          )}
+                          ))}
                         </tbody>
                       </table>
-                    </div>
+                    )}
                   </div>
                 )}
 
-                {activeTab === 'compras' && (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Compra</h3>
-                
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="relative col-span-2">
-                        <input
-                          type="text"
-                          placeholder="Buscar produto..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
-                        />
-                        
-                        {searchTerm && (
-                          <div className="absolute bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto z-50 w-full">
-                            {products
-                              .filter(p =>
-                                (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
-                              )
-                              .map((p) => (
-                                <div
-                                  key={p.id}
-                                  onClick={() => {
-                                    setNovaCompra({ ...novaCompra, produto: p.nome || p.name });
-                                    setSearchTerm("");
-                                  }}
-                                  className="p-2 hover:bg-white/10 cursor-pointer text-white"
-                                >
-                                  {p.nome || p.name} ({p.codigo})
-                                </div>
-                              ))}
-                            {products.filter(p =>
-                              (p.nome || p.name)?.toLowerCase().includes(searchTerm.toLowerCase())
-                            ).length === 0 && (
-                              <div className="p-2 text-center text-purple-300">
-                                Nenhum produto encontrado
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                
+                {activeTab === "compras" && (
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold mb-4">Registrar Compra</h2>
+                    <div className="flex flex-col md:flex-row gap-2 mb-4">
+                      <input
+                        type="text"
+                        placeholder="Buscar produto..."
+                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
+                        value={novaCompra.produto}
+                        onChange={(e) => setNovaCompra({ ...novaCompra, produto: e.target.value })}
+                      />
                       <input
                         type="text"
                         placeholder="Descrição"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="flex-1 p-2 rounded bg-white/10 text-white placeholder-white/40"
                         value={novaCompra.descricao}
-                        onChange={(e) =>
-                          setNovaCompra({ ...novaCompra, descricao: e.target.value })
-                        }
+                        onChange={(e) => setNovaCompra({ ...novaCompra, descricao: e.target.value })}
                       />
                       <input
                         type="number"
                         placeholder="Quantidade"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="w-32 p-2 rounded bg-white/10 text-white placeholder-white/40"
                         value={novaCompra.quantidade}
-                        onChange={(e) =>
-                          setNovaCompra({ ...novaCompra, quantidade: e.target.value })
-                        }
+                        onChange={(e) => setNovaCompra({ ...novaCompra, quantidade: e.target.value })}
                       />
                       <input
                         type="number"
                         placeholder="Valor Unitário"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="w-44 p-2 rounded bg-white/10 text-white placeholder-white/40"
                         value={novaCompra.valorUnitario}
-                        onChange={(e) =>
-                          setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })
-                        }
+                        onChange={(e) => setNovaCompra({ ...novaCompra, valorUnitario: e.target.value })}
                       />
                       <input
                         type="date"
-                        className="w-full border border-white/20 bg-white/20 text-white p-2 rounded placeholder-purple-300"
+                        className="w-44 p-2 rounded bg-white/10 text-white"
                         value={novaCompra.data}
-                        onChange={(e) =>
-                          setNovaCompra({ ...novaCompra, data: e.target.value })
-                        }
+                        onChange={(e) => setNovaCompra({ ...novaCompra, data: e.target.value })}
                       />
+                      <button
+                        onClick={registrarCompra}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+                      >
+                        + Registrar Compra
+                      </button>
                     </div>
                 
-                    <button
-                      onClick={registrarCompra}
-                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg"
-                    >
-                      + Registrar Compra
-                    </button>
+                    <h2 className="text-xl font-bold mt-6 mb-2">Compras Registradas</h2>
                 
-                    <h3 className="text-2xl font-bold text-white mt-10 mb-6">
-                      Compras Registradas
-                    </h3>
-                
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full text-white text-sm">
+                    {purchases.length === 0 ? (
+                      <div className="text-center text-white/60 mt-4">
+                        Nenhuma compra registrada.
+                      </div>
+                    ) : (
+                      <table className="w-full text-left mt-2 border-separate border-spacing-y-2">
                         <thead>
-                          <tr className="border-b border-white/20">
-                            <th className="p-2 text-left">PRODUTO</th>
-                            <th className="p-2 text-left">DESCRIÇÃO</th>
-                            <th className="p-2 text-left">QTD</th>
-                            <th className="p-2 text-left">VALOR UNIT.</th>
-                            <th className="p-2 text-left">DATA</th>
+                          <tr className="text-white/70 text-sm">
+                            <th>PRODUTO</th>
+                            <th>DESCRIÇÃO</th>
+                            <th>QTD</th>
+                            <th>VALOR UNIT.</th>
+                            <th>DATA</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {purchases.length === 0 ? (
-                            <tr>
-                              <td colSpan="5" className="text-center py-4 text-purple-400">
-                                Nenhuma compra registrada
-                              </td>
+                          {purchases.map((c, i) => (
+                            <tr key={i} className="bg-white/5 hover:bg-white/10">
+                              <td className="p-2">{c.produto}</td>
+                              <td className="p-2">{c.descricao}</td>
+                              <td className="p-2">{c.quantidade}</td>
+                              <td className="p-2">R$ {Number(c.valorUnitario).toFixed(2)}</td>
+                              <td className="p-2">{c.data}</td>
                             </tr>
-                          ) : (
-                            purchases.map((c) => (
-                              <tr key={c.id} className="border-b border-white/10 hover:bg-white/5 transition">
-                                <td className="p-2">{c.produto}</td>
-                                <td className="p-2">{c.descricao}</td>
-                                <td className="p-2">{c.quantidade}</td>
-                                <td className="p-2">R$ {parseFloat(c.valorUnitario || 0).toFixed(2)}</td>
-                                <td className="p-2">{c.data}</td>
-                              </tr>
-                            ))
-                          )}
+                          ))}
                         </tbody>
                       </table>
-                    </div>
+                    )}
                   </div>
-                )}                
-                {activeTab === 'estoque' && (
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">Estoque</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left text-purple-100">
-                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-                          <tr>
-                            <th className="px-4 py-3">Código</th>
-                            <th className="px-4 py-3">Produto</th>
-                            <th className="px-4 py-3 text-center">Estoque</th>
-                            <th className="px-4 py-3 text-center">Estoque Mínimo</th>
-                            <th className="px-4 py-3 text-center">Custo Médio</th>
-                            <th className="px-4 py-3 text-center">Valor Total</th>
-                            <th className="px-4 py-3 text-center">Controla Estoque</th>
-                            <th className="px-4 py-3 text-center">Ações</th>
+                )}
+                
+                {activeTab === "estoque" && (
+                  <div className="p-6">
+                    <h2 className="text-xl font-bold mb-4">Controle de Estoque</h2>
+                
+                    {products.length === 0 ? (
+                      <div className="text-center text-white/60 mt-8">
+                        Nenhum produto cadastrado.
+                      </div>
+                    ) : (
+                      <table className="w-full text-left border-separate border-spacing-y-2">
+                        <thead>
+                          <tr className="text-white/70 text-sm">
+                            <th>CÓDIGO</th>
+                            <th>PRODUTO</th>
+                            <th>CATEGORIA</th>
+                            <th>ESTOQUE</th>
+                            <th>MIN.</th>
+                            <th>CUSTO MÉDIO</th>
+                            <th>VALOR TOTAL</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {products.length === 0 ? (
-                            <tr>
-                              <td colSpan="8" className="text-center py-6 text-purple-300">
-                                Nenhum produto cadastrado
-                              </td>
-                            </tr>
-                          ) : products.map(prod => {
-                              const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
-                
-                              return (
-                                <tr
-                                  key={prod.codigo || prod.id}
-                                  className="border-b border-white/5 hover:bg-white/5"
-                                >
-                                  <td className="px-4 py-2 text-center font-mono">{prod.codigo}</td>
-                                  <td className="px-4 py-2">{prod.nome || prod.name}</td>
-                                  <td className="px-4 py-2 text-center">{prod.estoque ?? prod.stock ?? 0}</td>
-                                  <td className="px-4 py-2 text-center">{prod.estoqueMinimo ?? 0}</td>
-                
-                                  {/* 💰 Novas colunas */}
-                                  <td className="px-4 py-2 text-center">
-                                    {custoMedio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                                  </td>
-                                  <td className="px-4 py-2 text-center">
-                                    {valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                                  </td>
-                
-                                  <td className="px-4 py-2 text-center">
-                                    {prod.controlaEstoque ? "Sim" : "Não"}
-                                  </td>
-                                  <td className="px-4 py-2 text-center">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <button
-                                        onClick={() => openEditProduct(prod)}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center gap-2"
-                                      >
-                                        <icons.Edit />
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          openConfirm(
-                                            "delete",
-                                            "Excluir Produto",
-                                            `Deseja excluir o produto "${prod.nome || prod.name}" (${prod.codigo})?`,
-                                            () => handleDeleteProduct(prod.id)
-                                          )
-                                        }
-                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg flex items-center gap-2"
-                                      >
-                                        <icons.Trash2 />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          }
+                          {products.map((prod, i) => {
+                            const { custoMedio, valorTotal } = calcularValoresEstoque(prod, purchases, sales);
+                            const isLow = Number(prod.estoque || 0) <= Number(prod.estoqueMinimo || 0);
+                            return (
+                              <tr
+                                key={i}
+                                className={`bg-white/5 hover:bg-white/10 transition ${
+                                  isLow ? "border-l-4 border-red-500" : ""
+                                }`}
+                              >
+                                <td className="p-2">{prod.codigo}</td>
+                                <td className="p-2">{prod.nome}</td>
+                                <td className="p-2">{prod.categoria}</td>
+                                <td className="p-2 font-semibold">{prod.estoque}</td>
+                                <td className="p-2">{prod.estoqueMinimo}</td>
+                                <td className="p-2">R$ {custoMedio.toFixed(2)}</td>
+                                <td className="p-2">R$ {valorTotal.toFixed(2)}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
-                    </div>
+                    )}
                   </div>
                 )}
 
