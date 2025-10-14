@@ -208,33 +208,33 @@
             try {
               setLoading(true);
               
-              // ✅ NOVA IMPLEMENTAÇÃO: GET com query params
-              fetch(API_URL + "?action=login", {
+              const response = await fetch(`${API_URL}?action=login`, {
                 method: "POST",
-                mode: "no-cors", // se for Apps Script
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ usuario, senha }),
+                body: JSON.stringify({ 
+                  usuario: username,
+                  senha: password
+                }),
               });
-
+          
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+              }
               
-              // ✅ Agora podemos ler a resposta JSON
               const data = await response.json();
-              
               console.log('📦 Resposta do servidor:', data);
               
-              // ✅ Valida o sucesso real do login
               if (data.success) {
                 console.log('✅ Login bem-sucedido!');
                 onLogin('manager');
               } else {
-                // ✅ Exibe mensagem de erro do servidor
                 setError(data.message || 'Usuário ou senha incorretos');
                 console.log('❌ Login falhou:', data.message);
               }
               
             } catch (err) {
               console.error('💥 Erro de login:', err);
-              setError('Erro ao conectar com o servidor. Verifique sua conexão.');
+              setError('Erro ao conectar com o servidor: ' + err.message);
             } finally {
               setLoading(false);
             }
