@@ -209,11 +209,13 @@
               setLoading(true);
               
               // ✅ NOVA IMPLEMENTAÇÃO: GET com query params
-              const response = await fetch(`${API_URL}?action=login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: username.trim(), senha: password.trim() })
+              fetch(API_URL + "?action=login", {
+                method: "POST",
+                mode: "no-cors", // se for Apps Script
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ usuario, senha }),
               });
+
               
               // ✅ Agora podemos ler a resposta JSON
               const data = await response.json();
