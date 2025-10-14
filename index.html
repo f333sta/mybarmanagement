@@ -441,67 +441,65 @@
         
           // ----- REGISTRAR PEDIDO -----
           const handleRegisterPedido = async () => {
+            // validação básica
             if (!cliente || !selectedProduct) {
               showMessage("Preencha cliente e selecione um produto.", "error");
               return;
             }
           
-            const data = {
-              action: "addPedido",
-              cliente,
-              produto: {
-                codigo: selectedProduct.codigo,
-                nome: selectedProduct.nome || selectedProduct.produto || "",
-              },
-              total: parseFloat(selectedProduct.preco || 0),
+            // monta payload compatível com a API (usamos query param + body JSON)
+            const payload = {
+              cliente: cliente,
+              produtoNome: selectedProduct.nome || selectedProduct.produto || "",
+              codigo: selectedProduct.codigo || "",
+              total: parseFloat(selectedProduct.preco || selectedProduct.valor || 0) || 0
             };
           
             try {
-              const response = await fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify(data),
-              });
+              setEnviando(true); // bloqueia UI enquanto envia
           
-              const result = await response.json();
-              console.log("Resposta do servidor:", result);
-          
-              if (result.success) {
-                showMessage("✅ Pedido cadastrado com sucesso!");
-                setCliente("");
-                setSelectedProduct(null);
-                fetchPedidos();
-              } else {
-                showMessage("❌ Erro ao cadastrar pedido.");
-              }
-            } catch (err) {
-              console.error("Erro ao enviar pedido:", err);
-              showMessage("⚠️ Falha na comunicação com o servidor.");
-            }
-          };
-          
-            console.log("📤 Enviando pedido:", payload);
-          
-            try {
-              setEnviando(true);
-              const url = `${API_URL}?action=addPedido`;
-          
-              await fetch(`${API_URL}?action=addPedido`, {
+              // Faz POST para a API especificando a ação no querystring (recomendado)
+              const res = await fetch(`${API_URL}?action=addPedido`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
               });
           
-              showMessage("✅ Pedido cadastrado com sucesso!", "success");
+              // checar status HTTP primeiro
+              if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                console.error("Resposta não OK:", res.status, text);
+                showMessage("❌ Erro do servidor ao cadastrar pedido.", "error");
+                return;
+              }
           
-              // limpa imediatamente
-              setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
-              setSearchTerm("");  // ← ADICIONAR ESTA LINHA
+              const result = await res.json();
+              console.log("Resposta do servidor (addPedido):", result);
           
-              // recarrega lista com pequeno delay
-              setTimeout(loadPedidos, 1500);  // ← CORRIGIDO (removido timeoutId)
-            } catch (e) {
-              console.error("❌ Erro ao conectar ao servidor:", e);
-              showMessage("❌ Erro ao conectar ao servidor: " + e.message, "error");
+              if (result && result.success) {
+                showMessage("✅ Pedido cadastrado com sucesso!", "success");
+          
+                // limpa campos do formulário
+                setCliente("");
+                setSelectedProduct(null);
+                setNovoPedido && setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" }); // apenas se existir
+                setSearchTerm && setSearchTerm("");       // limpar input de busca
+                setSugestoesCompra && setSugestoesCompra([]); // ou setSugestoesVenda conforme o contexto
+          
+                // recarrega pedidos (use a função que você tem: loadPedidos / fetchPedidos)
+                if (typeof fetchPedidos === "function") {
+                  // pequeno delay para garantir que o servidor já gravou
+                  setTimeout(() => fetchPedidos(), 800);
+                } else if (typeof loadPedidos === "function") {
+                  setTimeout(() => loadPedidos(), 800);
+                }
+              } else {
+                console.error("Falha ao cadastrar pedido (API):", result);
+                showMessage("❌ Erro ao cadastrar pedido: " + (result?.message || ""), "error");
+              }
+            } catch (err) {
+              console.error("Erro ao enviar pedido:", err);
+              showMessage("⚠️ Falha na comunicação com o servidor.", "error");
             } finally {
               setEnviando(false);
             }
