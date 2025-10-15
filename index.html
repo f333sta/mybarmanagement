@@ -187,24 +187,22 @@
         
           const handleLogin = async () => {
             setError('');
-          
+            
             if (!selectedProfile) {
               setError('Selecione um perfil!');
               return;
             }
-          
-            // Perfis sem login e senha
+            
             if (selectedProfile !== 'manager') {
               onLogin(selectedProfile);
               return;
             }
-          
-            // Manager precisa de login/senha
+            
             if (!username.trim() || !password.trim()) {
               setError('Digite o usuário e a senha!');
               return;
             }
-          
+            
             try {
               setLoading(true);
               
@@ -219,12 +217,14 @@
                   senha: password
                 }),
               });
-          
+            
               if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
               }
               
-              const data = await response.json();
+              const text = await response.text();
+              const data = JSON.parse(text); 
+        
               console.log('📦 Resposta do servidor:', data);
               
               if (data.success) {
@@ -241,7 +241,7 @@
             } finally {
               setLoading(false);
             }
-          };
+        };
         
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
