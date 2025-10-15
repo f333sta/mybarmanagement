@@ -379,7 +379,12 @@
           const loadProdutos = async () => {
             try {
               console.log('📡 Carregando produtos...');
-              const r = await fetch(`${API_URL}?action=getProdutos`);
+              const response = await fetch(`${API_URL}?action=getProdutos`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json' 
+                }
+});
               
               if (!r.ok) {
                 throw new Error(`HTTP error! status: ${r.status}`);
@@ -406,7 +411,12 @@
           const loadPedidos = async () => {
             try {
               console.log('📡 Carregando pedidos...');
-              const r = await fetch(`${API_URL}?action=getPedidosData`);
+              const response = await fetch(`${API_URL}?action=getPedidosData`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json' 
+                }
+            });
               
               if (!r.ok) {
                 throw new Error(`HTTP error! status: ${r.status}`);
