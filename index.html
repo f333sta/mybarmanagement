@@ -378,92 +378,40 @@
             setTimeout(() => setMessage(""), 3500);
           };
         
-          // ----- CARREGAR PRODUTOS -----
           const loadProdutos = async () => {
             try {
-              console.log('📡 Carregando produtos...');
-              const response = await fetch(API_URL, { 
-                method: 'POST', 
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded" 
-                },
-                body: new URLSearchParams({ 
-                  action: "getProdutos"
-                })
-              });
-              
-              if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-              }
-              
-              const d = await r.json();
-              console.log('📦 Resposta produtos:', d);
-              
-              if (d.produtos && Array.isArray(d.produtos)) {
-                setProdutos(d.produtos);
-                console.log('✅ Produtos carregados:', d.produtos.length);
-              } else {
-                console.warn('⚠️ Formato inesperado de produtos');
-                setProdutos([]);
+              const data = await apiCall('getProdutos');
+              if (data.produtos && Array.isArray(data.produtos)) {
+                setProdutos(data.produtos);
               }
             } catch (e) {
               console.error('❌ Erro ao carregar produtos:', e);
-              setProdutos([]);
-              showMessage("❌ Erro ao carregar produtos: " + e.message, "error");
+              showMessage("❌ Erro ao carregar produtos", "error");
             }
           };
         
-          // ----- CARREGAR PEDIDOS -----
           const loadPedidos = async () => {
             try {
-              console.log('📡 Carregando pedidos...');
-              const response = await fetch(API_URL, { 
-                method: 'POST', 
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: new URLSearchParams({ 
-                  action: "getPedidosData"
-                })
-              });
-              
-              if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-              }
-              
-              const d = await r.json();
-              console.log('📦 Resposta pedidos:', d);
-              
-              if (d.pedidos && Array.isArray(d.pedidos)) {
-                setPedidos(d.pedidos);
-                console.log('✅ Pedidos carregados:', d.pedidos.length);
-              } else {
-                console.warn('⚠️ Formato inesperado de pedidos');
-                setPedidos([]);
+              const data = await apiCall('getPedidosData');
+              if (data.pedidos && Array.isArray(data.pedidos)) {
+                setPedidos(data.pedidos);
               }
             } catch (e) {
               console.error('❌ Erro ao carregar pedidos:', e);
-              showMessage("❌ Erro ao carregar pedidos: " + e.message, "error");
+              showMessage("❌ Erro ao carregar pedidos", "error");
             } finally {
               setLoading(false);
             }
           };
-        useEffect(() => {
-          let ativo = true; // 🔒 flag de controle para evitar updates após desmontar
         
-          loadProdutos();
-          loadPedidos();
+          useEffect(() => {
+            loadProdutos();
+            loadPedidos();
+          }, []);
         
-          return () => {
-            ativo = false;
-            console.log("🧹 limpando intervalos e timeouts...");
-          };
-        }, []);
-        
-          // ----- REGISTRAR PEDIDO -----
           const addPedido = async () => {
             if (!novoPedido.cliente || !novoPedido.drinkId) {
-              showMessage("Preencha o nome do cliente e selecione um drink!", "error");
+              showMessage("Preencha o nome e selecione um drink!", "error");
               return;
             }
           
@@ -473,38 +421,30 @@
               return;
             }
           
-            const payload = {
-              cliente: novoPedido.cliente,
-              produtoNome: produto.nome,
-              codigo: produto.codigo,
-              total: produto.precoVenda || 0
-            };
-          
             try {
               setEnviando(true);
-              const res = await fetch(API_URL, { 
-                method: "POST",
-                headers: { 
-                  "Content-Type": "application/x-www-form-urlencoded" 
-                },
-                body: new URLSearchParams({...payload, action: "addPedido"}), 
+              const data = await apiCall('addPedido', {
+                cliente: novoPedido.cliente,
+                produtoNome: produto.nome,
+                codigo: produto.codigo,
+                total: produto.precoVenda || 0
               });
-              const data = await res.json();
+              
               if (data.success) {
                 showMessage("✅ Pedido registrado!", "success");
                 setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
+                setSearchTerm("");
                 loadPedidos();
               } else {
-                showMessage("❌ Erro: " + (data.message || "Falha no servidor"), "error");
+                showMessage("❌ " + (data.message || "Erro"), "error");
               }
             } catch (err) {
-              showMessage("❌ Falha na comunicação com o servidor", "error");
+              showMessage("❌ Erro: " + err.message, "error");
             } finally {
               setEnviando(false);
             }
           };
           
-          // ----- LOADING -----
           if (loading) {
             return (
               <div className="min-h-screen flex items-center justify-center text-white text-2xl bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
@@ -519,7 +459,6 @@
             );
           }
 
-          // ----- RENDER PRINCIPAL -----
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pb-10 p-4">
               <div className="max-w-6xl mx-auto">
@@ -558,27 +497,22 @@
                       className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                     />
                     
-                    {/* ⭐ NOVO: Campo de busca separado com dropdown */}
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Buscar produto (Drinks)"
+                        placeholder="Buscar drink..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                       />
                       
-                      {/* ⭐ NOVO: Dropdown aparece enquanto digita */}
                       {searchTerm && (
                         <div className="absolute z-50 w-full bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto">
                           {produtos
                             .filter((p) => {
-                              // ✅ MANTÉM O FILTRO DE CATEGORIA DRINKS
                               const categoria = String(p.categoria || "").toLowerCase();
                               const nome = String(p.nome || "").toLowerCase();
                               const busca = searchTerm.toLowerCase();
-                              
-                              // Só mostra produtos da categoria "drinks" que contenham o texto buscado
                               return categoria === "drinks" && nome.includes(busca);
                             })
                             .map((p, i) => (
@@ -590,7 +524,7 @@
                                     drinkId: p.id,
                                     drinkBusca: `${p.nome} (${p.codigo})`,
                                   });
-                                  setSearchTerm(""); // Limpa o campo de busca após selecionar
+                                  setSearchTerm("");
                                 }}
                                 className="p-2 hover:bg-white/20 cursor-pointer text-purple-200"
                               >
@@ -598,14 +532,13 @@
                               </div>
                             ))}
                           
-                          {/* ⭐ Mensagem quando não encontra drinks */}
                           {produtos.filter((p) => {
                             const categoria = String(p.categoria || "").toLowerCase();
                             const nome = String(p.nome || "").toLowerCase();
                             return categoria === "drinks" && nome.includes(searchTerm.toLowerCase());
                           }).length === 0 && (
                             <div className="p-2 text-center text-purple-300">
-                              Nenhum drink encontrado com "{searchTerm}"
+                              Nenhum drink encontrado
                             </div>
                           )}
                         </div>
@@ -613,7 +546,6 @@
                     </div>
                   </div>
                   
-                  {/* ⭐ Mostra o produto selecionado */}
                   {novoPedido.drinkBusca && (
                     <div className="bg-white/10 rounded-lg p-3 mb-4 text-purple-200">
                       Selecionado: {novoPedido.drinkBusca}
@@ -641,48 +573,47 @@
                       </>
                     )}
                   </button>
-                  
-                  </div> 
-                  
-                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mt-6">
-                    <h3 className="text-2xl font-bold text-white mb-6">Pedidos Cadastrados</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left text-purple-100">
-                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                  <h3 className="text-2xl font-bold text-white mb-6">Pedidos Cadastrados</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-purple-100">
+                      <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                        <tr>
+                          <th className="px-4 py-3">Cliente</th>
+                          <th className="px-4 py-3">Produto</th>
+                          <th className="px-4 py-3">Código</th>
+                          <th className="px-4 py-3">Total</th>
+                          <th className="px-4 py-3">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pedidos.length === 0 ? (
                           <tr>
-                            <th className="px-4 py-3">Cliente</th>
-                            <th className="px-4 py-3">Produto</th>
-                            <th className="px-4 py-3">Código</th>
-                            <th className="px-4 py-3">Total</th>
-                            <th className="px-4 py-3">Data</th>
+                            <td colSpan="5" className="text-center py-6 text-purple-300">
+                              Nenhum pedido registrado.
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {pedidos.length === 0 ? (
-                            <tr>
-                              <td colSpan="5" className="text-center py-6 text-purple-300">
-                                Nenhum pedido registrado.
-                              </td>
+                        ) : (
+                          pedidos.map((p, i) => (
+                            <tr key={p.id || i} className="border-b border-white/5">
+                              <td className="px-4 py-2">{p.cliente}</td>
+                              <td className="px-4 py-2">{p.produtoNome}</td>
+                              <td className="px-4 py-2">{p.codigo}</td>
+                              <td className="px-4 py-2">R$ {parseFloat(p.total || 0).toFixed(2)}</td>
+                              <td className="px-4 py-2">{p.data}</td>
                             </tr>
-                          ) : (
-                            pedidos.map((p, i) => (
-                              <tr key={p.id || i} className="border-b border-white/5">
-                                <td className="px-4 py-2">{p.cliente}</td>
-                                <td className="px-4 py-2">{p.produtoNome}</td>
-                                <td className="px-4 py-2">{p.codigo}</td>
-                                <td className="px-4 py-2">R$ {parseFloat(p.total || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{p.data}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div> 
-                </div> 
-              </div> 
-            );
-         };
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
 
         // Componente Barista
         const BaristaScreen = ({ onLogout }) => {
@@ -691,49 +622,43 @@
           const [mensagem, setMensagem] = useState("");
           const [processando, setProcessando] = useState(null);
         
-          useEffect(() => {
-            let ativo = true;
-        
-            const carregarPedidos = async () => {
-              try {
-                const r = await fetch(`${API_URL}?action=getPedidosData`);
-                const d = await r.json();
-                if (ativo) setPedidos(d.pedidos || []);
-              } catch (err) {
-                console.error("Erro ao carregar pedidos:", err);
-                if (ativo) setMensagem("❌ Erro ao carregar pedidos.");
-              } finally {
-                if (ativo) setLoading(false);
+          const carregarPedidos = async () => {
+            try {
+              const data = await apiCall('getPedidosData');
+              if (data.pedidos && Array.isArray(data.pedidos)) {
+                setPedidos(data.pedidos);
               }
-            };
+            } catch (err) {
+              console.error("Erro ao carregar pedidos:", err);
+              setMensagem("❌ Erro ao carregar pedidos.");
+            } finally {
+              setLoading(false);
+            }
+          };
         
+          useEffect(() => {
             carregarPedidos();
             const interval = setInterval(carregarPedidos, 5000);
-        
-            return () => {
-              ativo = false;
-              clearInterval(interval);
-            };
+            return () => clearInterval(interval);
           }, []);
         
           const finalizarPedido = async (id) => {
             setProcessando(id);
             try {
-              const res = await fetch(`${API_URL}?action=updateStatus`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, status: "concluido" }),
+              const data = await apiCall('updateStatus', {
+                id: id,
+                status: "concluido"
               });
-              const data = await res.json();
+              
               if (data.success) {
                 setMensagem("✅ Pedido finalizado!");
                 setPedidos((prev) => prev.filter((p) => p.id !== id));
               } else {
-                setMensagem("❌ " + (data.message || "Falha ao atualizar status."));
+                setMensagem("❌ " + (data.message || "Erro"));
               }
             } catch (err) {
               console.error("Erro:", err);
-              setMensagem("❌ Erro ao conectar ao servidor.");
+              setMensagem("❌ Erro ao conectar.");
             } finally {
               setProcessando(null);
               setTimeout(() => setMensagem(""), 3000);
@@ -788,10 +713,7 @@
                         >
                           <div>
                             <p className="text-white font-semibold">
-                              {p.cliente} –{" "}
-                              <span className="text-purple-300">
-                                {p.produtoNome || p.produto || p.nome || "Produto não identificado"}
-                              </span>
+                              {p.cliente} – <span className="text-purple-300">{p.produtoNome}</span>
                             </p>
                             <p className="text-purple-200 text-sm">
                               #{p.numeroPedido} • {p.data} • {p.horaAbertura}
