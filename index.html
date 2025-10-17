@@ -856,16 +856,21 @@
           // Carregar todos os dados do servidor
           const loadAllData = useCallback(async () => {
             try {
-              setLoading(true); setError(null);
-              const resp = await fetch(`${API_URL}?action=getAllData`);
-              const data = await resp.json();
-              if (data.error) throw new Error(data.error || 'Erro ao carregar dados.');
-              setProducts(data.produtos || []);
-              setPurchases(data.compras || []);
-              setSales(data.vendas || []);
-              setTransactions(data.transactions || []);
+              setLoading(true); 
+              setError(null);
+              
+              const data = await apiCall('getAllData');
+              
+              if (data.success) {
+                setProducts(data.produtos || []);
+                setPurchases(data.compras || []);
+                setSales(data.vendas || []); 
+                setTransactions(data.transactions || []);
+              } else {
+                throw new Error(data.message || 'Erro ao carregar dados');
+              }
             } catch (err) {
-              console.error(err);
+              console.error('Erro loadAllData:', err);
               setError(err.message || 'Erro desconhecido');
             } finally {
               setLoading(false);
@@ -901,15 +906,28 @@
           const addProduct = useCallback(async () => {
             const { nome, categoria, codigo, estoqueMinimo, precoVenda } = newProduct;
             if (!nome || !categoria || !codigo || estoqueMinimo === '' || precoVenda === '') {
-              showMessage('❌ Preencha todos os campos do cadastro!', 'error'); return;
+              showMessage('❌ Preencha todos os campos do cadastro!', 'error'); 
+              return;
             }
-            if (nome.trim().length < 3) { showMessage('❌ Nome precisa ter ao menos 3 caracteres', 'error'); return; }
-            if (isNaN(parseFloat(estoqueMinimo)) || parseFloat(estoqueMinimo) < 0) { showMessage('❌ Estoque mínimo inválido', 'error'); return; }
-            if (isNaN(parseFloat(precoVenda)) || parseFloat(precoVenda) <= 0) { showMessage('❌ Preço de venda deve ser > 0', 'error'); return; }
-        
+            if (nome.trim().length < 3) { 
+              showMessage('❌ Nome precisa ter ao menos 3 caracteres', 'error'); 
+              return; 
+            }
+            if (isNaN(parseFloat(estoqueMinimo)) || parseFloat(estoqueMinimo) < 0) { 
+              showMessage('❌ Estoque mínimo inválido', 'error'); 
+              return; 
+            }
+            if (isNaN(parseFloat(precoVenda)) || parseFloat(precoVenda) <= 0) { 
+              showMessage('❌ Preço de venda deve ser > 0', 'error'); 
+              return; 
+            }
+          
             const exists = products.find(p => (p.codigo || '').toUpperCase() === codigo.toUpperCase());
-            if (exists) { showMessage('❌ Já existe produto com esse código', 'error'); return; }
-        
+            if (exists) { 
+              showMessage('❌ Já existe produto com esse código', 'error'); 
+              return; 
+            }
+          
             try {
               const body = {
                 ...newProduct,
@@ -918,53 +936,51 @@
                 categoria: newProduct.categoria.trim(),
                 estoque: 0
               };
-              const resp = await fetch(`${API_URL}?action=addProduto`, {
-                method: 'POST', body: JSON.stringify(body)
-              });
-              const res = await resp.json();
-              if (res.success) {
+              
+              const data = await apiCall('addProduto', body);
+              
+              if (data.success) {
                 showMessage('✅ Produto cadastrado com sucesso!', 'success');
                 setNewProduct({ nome: '', categoria: '', codigo: '', estoqueMinimo: '', precoCusto: '', precoVenda: '', controlaEstoque: true });
                 loadAllData();
               } else {
-                showMessage('⚠️ Falha ao cadastrar produto', 'error');
+                showMessage('⚠️ ' + (data.message || 'Falha ao cadastrar produto'), 'error');
               }
             } catch (err) {
-              console.error(err); showMessage('❌ ' + err.message, 'error');
+              console.error(err); 
+              showMessage('❌ ' + err.message, 'error');
             }
           }, [newProduct, products, loadAllData]);
         
           const updateProductOnServer = useCallback(async (updatedProduct) => {
             try {
-              const resp = await fetch(`${API_URL}?action=updateProduto`, {
-                method: 'POST', body: JSON.stringify(updatedProduct)
-              });
-              const res = await resp.json();
-              if (res.success) {
+              const data = await apiCall('updateProduto', updatedProduct);
+              
+              if (data.success) {
                 showMessage('✅ Alteração salva!', 'success');
                 loadAllData();
               } else {
-                showMessage('⚠️ Falha ao atualizar produto', 'error');
+                showMessage('⚠️ ' + (data.message || 'Falha ao atualizar produto'), 'error');
               }
             } catch (err) {
-              console.error(err); showMessage('❌ ' + err.message, 'error');
+              console.error(err); 
+              showMessage('❌ ' + err.message, 'error');
             }
           }, [loadAllData]);
-        
+          
           const handleDeleteProduct = useCallback(async (productId) => {
             try {
-              const resp = await fetch(`${API_URL}?action=deleteProduto`, {
-                method: 'POST', body: JSON.stringify({ id: productId })
-              });
-              const res = await resp.json();
-              if (res.success) {
+              const data = await apiCall('deleteProduto', { id: productId });
+              
+              if (data.success) {
                 showMessage('✅ Produto excluído', 'success');
                 loadAllData();
               } else {
-                showMessage('❌ Falha ao excluir produto', 'error');
+                showMessage('❌ ' + (data.message || 'Falha ao excluir produto'), 'error');
               }
             } catch (err) {
-              console.error(err); showMessage('❌ ' + err.message, 'error');
+              console.error(err); 
+              showMessage('❌ ' + err.message, 'error');
             }
           }, [loadAllData]);
         
@@ -1008,22 +1024,14 @@
             }
           
             try {
-              const res = await fetch(`${API_URL}?action=addVenda`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(novaVenda),
-              });
-          
-              const data = await res.json();
-              console.log("✅ addVenda resposta:", data);
-          
-              if (data && data.success) {
+              const data = await apiCall('addVenda', novaVenda);
+              
+              if (data.success) {
                 showMessage("✅ Venda registrada com sucesso!", "success");
                 setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
-                await loadAllData(); // recarrega produtos/vendas para refletir o estoque atualizado
+                await loadAllData();
               } else {
-                console.error("addVenda falhou:", data);
-                showMessage("❌ Erro ao registrar venda.", "error");
+                showMessage(data.message || "❌ Erro ao registrar venda.", "error");
               }
             } catch (err) {
               console.error("Erro ao registrar venda:", err);
@@ -1037,22 +1045,14 @@
             }
           
             try {
-              const res = await fetch(`${API_URL}?action=addCompra`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(novaCompra),
-              });
-          
-              const data = await res.json();
-              console.log("✅ addCompra resposta:", data);
-          
-              if (data && data.success) {
+              const data = await apiCall('addCompra', novaCompra);
+              
+              if (data.success) {
                 showMessage("✅ Compra registrada com sucesso!", "success");
                 setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
-                await loadAllData(); // recarrega produtos/compras para refletir o estoque atualizado
+                await loadAllData();
               } else {
-                console.error("addCompra falhou:", data);
-                showMessage("❌ Erro ao registrar compra.", "error");
+                showMessage(data.message || "❌ Erro ao registrar compra.", "error");
               }
             } catch (err) {
               console.error("Erro ao registrar compra:", err);
@@ -1064,19 +1064,17 @@
             if (!novaTransacao.tipo || !novaTransacao.valor || !novaTransacao.descricao || !novaTransacao.data) {
               return showMessage("⚠️ Preencha todos os campos!", "error");
             }
+            
             try {
-              const res = await fetch(`${API_URL}?action=addTransacao`, {
-                method: "POST",
-                body: JSON.stringify(novaTransacao),
-              });
-              const data = await res.json();
+              const data = await apiCall('addTransacao', novaTransacao);
+              
               if (data.success) {
                 showMessage("✅ Movimento registrado!", "success");
                 setShowAddTransacao(false);
                 setNovaTransacao({ tipo: "", valor: "", descricao: "", data: "" });
                 loadAllData();
               } else {
-                showMessage("❌ Erro ao registrar movimento", "error");
+                showMessage(data.message || "❌ Erro ao registrar movimento", "error");
               }
             } catch (err) {
               showMessage("❌ Erro: " + err.message, "error");
