@@ -126,6 +126,41 @@
             ),
         };
 
+        // Função Helper Chamada API
+        const apiCall = async (action, params = {}) => {
+          try {
+            console.log(`🔵 Chamando API: ${action}`, params);
+            
+            const url = `${API_URL}?action=${action}`;
+            const body = new URLSearchParams({ action, ...params });
+            
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: body.toString()
+            });
+            
+            console.log(`📡 Response status: ${response.status}`);
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const text = await response.text();
+            console.log(`📦 Response text:`, text.substring(0, 200));
+            
+            const data = JSON.parse(text);
+            console.log(`✅ Parsed data:`, data);
+            
+            return data;
+          } catch (err) {
+            console.error(`❌ Erro na API ${action}:`, err);
+            throw err;
+          }
+        };
+      
         // Modal de Confirmação
         const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type = "delete" }) => {
           if (!isOpen) return null;
@@ -193,11 +228,13 @@
               return;
             }
             
+            // Atendente e Barista entram direto
             if (selectedProfile !== 'manager') {
               onLogin(selectedProfile);
               return;
             }
             
+            // Manager precisa de autenticação
             if (!username.trim() || !password.trim()) {
               setError('Digite o usuário e a senha!');
               return;
@@ -206,42 +243,25 @@
             try {
               setLoading(true);
               
-              const response = await fetch(API_URL, { 
-                method: "POST",
-                headers: { 
-                  "Content-Type": "application/x-www-form-urlencoded" 
-                },
-                body: new URLSearchParams({ 
-                  action: "login", 
-                  usuario: username,
-                  senha: password
-                }),
+              const data = await apiCall('login', {
+                usuario: username,
+                senha: password
               });
-            
-              if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-              }
-              
-              const text = await response.text();
-              const data = JSON.parse(text); 
-        
-              console.log('📦 Resposta do servidor:', data);
               
               if (data.success) {
                 console.log('✅ Login bem-sucedido!');
-                onLogin('manager');
+                onLogin('manager', data);
               } else {
                 setError(data.message || 'Usuário ou senha incorretos');
-                console.log('❌ Login falhou:', data.message);
               }
               
             } catch (err) {
               console.error('💥 Erro de login:', err);
-              setError('Erro ao conectar com o servidor: ' + err.message);
+              setError('Erro ao conectar: ' + err.message);
             } finally {
               setLoading(false);
             }
-        };
+          };
         
           return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -251,7 +271,6 @@
                   <p className="text-purple-200">Selecione seu perfil de acesso</p>
                 </div>
         
-                {/* Botões de perfil */}
                 <div className="space-y-4 mb-6">
                   <button
                     onClick={() => setSelectedProfile('manager')}
@@ -282,7 +301,7 @@
                       <icons.ShoppingCart />
                       <div>
                         <div className="text-lg">Atendente</div>
-                        <div className="text-sm opacity-80">Cadastrar e acompanhar pedidos</div>
+                        <div className="text-sm opacity-80">Cadastrar pedidos</div>
                       </div>
                     </div>
                   </button>
@@ -299,13 +318,12 @@
                       <icons.Coffee />
                       <div>
                         <div className="text-lg">Barista</div>
-                        <div className="text-sm opacity-80">Visualizar e finalizar pedidos</div>
+                        <div className="text-sm opacity-80">Finalizar pedidos</div>
                       </div>
                     </div>
                   </button>
                 </div>
         
-                {/* Campos de login para Manager */}
                 {selectedProfile === 'manager' && (
                   <div className="space-y-3 mb-4">
                     <input
@@ -327,14 +345,12 @@
                   </div>
                 )}
         
-                {/* Mensagem de erro */}
                 {error && (
                   <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 mb-4 text-red-200 text-center">
                     {error}
                   </div>
                 )}
         
-                {/* Botão Entrar */}
                 <button
                   onClick={handleLogin}
                   disabled={loading || !selectedProfile}
