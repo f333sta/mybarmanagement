@@ -450,9 +450,9 @@
             try {
               setEnviando(true);
               const data = await apiCall('addPedido', {
-                cliente: novoPedido.cliente,
-                produtoNome: produto.nome,
-                codigo: produto.codigo,
+                cliente: novoPedido.cliente.trim(),
+                produtoNome: produto.nome.trim(),
+                codigo: produto.codigo.trim(),
                 total: produto.precoVenda || 0
               });
               
@@ -469,8 +469,7 @@
             } finally {
               setEnviando(false);
             }
-          };
-          
+          };          
           if (loading) {
             return (
               <div className="min-h-screen flex items-center justify-center text-white text-2xl bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
