@@ -607,6 +607,7 @@
                     <table className="w-full text-sm text-left text-purple-100">
                       <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
                         <tr>
+                          <th className="px-4 py-3 text-center">Status</th>
                           <th className="px-4 py-3">Cliente</th>
                           <th className="px-4 py-3">Produto</th>
                           <th className="px-4 py-3">Código</th>
@@ -617,20 +618,40 @@
                       <tbody>
                         {pedidos.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="text-center py-6 text-purple-300">
+                            <td colSpan="6" className="text-center py-6 text-purple-300">
                               Nenhum pedido registrado.
                             </td>
                           </tr>
                         ) : (
-                          pedidos.map((p, i) => (
-                            <tr key={p.id || i} className="border-b border-white/5">
-                              <td className="px-4 py-2">{p.cliente}</td>
-                              <td className="px-4 py-2">{p.produtoNome}</td>
-                              <td className="px-4 py-2">{p.codigo}</td>
-                              <td className="px-4 py-2">R$ {parseFloat(p.total || 0).toFixed(2)}</td>
-                              <td className="px-4 py-2">{p.data}</td>
-                            </tr>
-                          ))
+                          (() => {
+                            const pedidosOrdenados = [...pedidos].sort((a, b) => {
+                              if (a.status === 'pendente' && b.status !== 'pendente') return -1;
+                              if (a.status !== 'pendente' && b.status === 'pendente') return 1;
+                              
+                              // Prioridade 2: ID (maior = mais recente)
+                              return (b.id || 0) - (a.id || 0);
+                            });
+                            
+                            return pedidosOrdenados.map((p, i) => (
+                              <tr key={p.id || i} className="border-b border-white/5 hover:bg-white/5">
+                                <td className="px-4 py-2 text-center">
+                                  <div className="flex justify-center">
+                                    <div 
+                                      className={`w-3 h-3 rounded-full ${
+                                        p.status === 'pendente' ? 'bg-yellow-400' : 'bg-green-400'
+                                      }`}
+                                      title={p.status === 'pendente' ? 'Pendente' : 'Concluído'}
+                                    />
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2">{p.cliente}</td>
+                                <td className="px-4 py-2">{p.produtoNome}</td>
+                                <td className="px-4 py-2">{p.codigo}</td>
+                                <td className="px-4 py-2">R$ {parseFloat(p.total || 0).toFixed(2)}</td>
+                                <td className="px-4 py-2">{p.data}</td>
+                              </tr>
+                            ));
+                          })()
                         )}
                       </tbody>
                     </table>
@@ -1494,7 +1515,7 @@
                 
                 {activeTab === "estoque" && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                    <h3 className="text-2xl font-bold text-white mb-6">📦 Controle de Estoque</h3>
+                    <h3 className="text-2xl font-bold text-white mb-6">Controle de Estoque</h3>
                 
                     <div className="mb-6">
                       <input
