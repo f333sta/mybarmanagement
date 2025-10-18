@@ -1302,222 +1302,210 @@
                 )}
         
                 {activeTab === "vendas" && (
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Registrar Venda</h2>
-                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="relative search-container">
-                          <input
-                            type="text"
-                            placeholder="Buscar produto..."
-                            value={novaVenda.produto}
-                            onChange={handleProdutoSearchVenda}
-                            className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-400"
-                          />
-                          {sugestoesVenda.length > 0 && (
-                            <ul id="venda-sugestoes" className="absolute z-10 bg-purple-800 border border-purple-700 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
-                              {sugestoesVenda.map((produto, index) => (
-                                <li
-                                  key={index}
-                                  onClick={() => handleSelectProdutoVenda(produto)}
-                                  className="p-2 hover:bg-purple-700 cursor-pointer text-purple-100"
-                                >
-                                  {produto.nome}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Venda</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="relative search-container">
                         <input
                           type="text"
-                          placeholder="Descrição"
-                          value={novaVenda.descricao}
-                          onChange={(e) => setNovaVenda(prev => ({ ...prev, descricao: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
+                          placeholder="Buscar produto..."
+                          value={novaVenda.produto}
+                          onChange={handleProdutoSearchVenda}
+                          className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                         />
-                        <input
-                          type="number"
-                          placeholder="Quantidade"
-                          value={novaVenda.quantidade}
-                          onChange={(e) => setNovaVenda(prev => ({ ...prev, quantidade: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                      </div>
-                
-                      <div className="mt-3">
-                        <input
-                          type="date"
-                          value={novaVenda.data}
-                          onChange={(e) => setNovaVenda(prev => ({ ...prev, data: e.target.value }))}
-                          className="w-full md:w-1/3 p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                      </div>
-                
-                      <button
-                        onClick={registrarVenda}
-                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
-                      >
-                        + Registrar Venda
-                      </button>
-                    </div>
-                
-                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Vendas Registradas</h3>
-                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg">
-                      {sales.length === 0 ? (
-                        <p className="text-purple-300 italic">Nenhuma venda registrada.</p>
-                      ) : (
-                        <table className="w-full text-left text-purple-100 mt-3">
-                          <thead className="border-b border-purple-700 text-sm uppercase">
-                            <tr>
-                              <th>Produto</th>
-                              <th>Descrição</th>
-                              <th>Qtd</th>
-                              <th>Data</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sales.map((v, i) => (
-                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
-                                <td>{v.produto}</td>
-                                <td>{v.descricao}</td>
-                                <td>{v.quantidade}</td>
-                                <td>{v.data}</td>
-                              </tr>
+                        {sugestoesVenda.length > 0 && (
+                          <ul id="venda-sugestoes" className="absolute z-10 bg-gray-900 border border-white/10 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
+                            {sugestoesVenda.map((produto, index) => (
+                              <li
+                                key={index}
+                                onClick={() => handleSelectProdutoVenda(produto)}
+                                className="p-2 hover:bg-white/20 cursor-pointer text-purple-200"
+                              >
+                                {produto.nome}
+                              </li>
                             ))}
-                          </tbody>
-                        </table>
-                      )}
+                          </ul>
+                        )}
+                      </div>
+              
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        value={novaVenda.descricao}
+                        onChange={(e) => setNovaVenda(prev => ({ ...prev, descricao: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Quantidade"
+                        value={novaVenda.quantidade}
+                        onChange={(e) => setNovaVenda(prev => ({ ...prev, quantidade: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="date"
+                        value={novaVenda.data}
+                        onChange={(e) => setNovaVenda(prev => ({ ...prev, data: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                    </div>
+              
+                    <button
+                      onClick={registrarVenda}
+                      className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold w-full flex items-center justify-center gap-2"
+                    >
+                      <icons.Plus /> Registrar Venda
+                    </button>
+              
+                    <h3 className="text-2xl font-bold text-white mb-6 mt-10">Vendas Registradas</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left text-purple-100">
+                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                          <tr>
+                            <th className="px-4 py-3">Produto</th>
+                            <th className="px-4 py-3">Descrição</th>
+                            <th className="px-4 py-3">Qtd</th>
+                            <th className="px-4 py-3">Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sales.length === 0 ? (
+                            <tr><td colSpan="4" className="text-center py-6 text-purple-300">Nenhuma venda registrada</td></tr>
+                          ) : (
+                            sales.map((v, i) => (
+                              <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                                <td className="px-4 py-2">{v.produto}</td>
+                                <td className="px-4 py-2">{v.descricao}</td>
+                                <td className="px-4 py-2">{v.quantidade}</td>
+                                <td className="px-4 py-2">{v.data}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
-
+                
                 {activeTab === "compras" && (
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Registrar Compra</h2>
-                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="relative search-container">
-                          <input
-                            type="text"
-                            placeholder="Buscar produto..."
-                            value={novaCompra.produto}
-                            onChange={handleProdutoSearchCompra}
-                            className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-400"
-                          />
-                          {sugestoesCompra.length > 0 && (
-                            <ul id="compra-sugestoes" className="absolute z-10 bg-purple-800 border border-purple-700 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
-                              {sugestoesCompra.map((produto, index) => (
-                                <li
-                                  key={index}
-                                  onClick={() => handleSelectProdutoCompra(produto)}
-                                  className="p-2 hover:bg-purple-700 cursor-pointer text-purple-100"
-                                >
-                                  {produto.nome}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                    <h3 className="text-2xl font-bold text-white mb-6">Registrar Compra</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="relative search-container">
                         <input
                           type="text"
-                          placeholder="Descrição"
-                          value={novaCompra.descricao}
-                          onChange={(e) => setNovaCompra(prev => ({ ...prev, descricao: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
+                          placeholder="Buscar produto..."
+                          value={novaCompra.produto}
+                          onChange={handleProdutoSearchCompra}
+                          className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
                         />
-                        <input
-                          type="number"
-                          placeholder="Quantidade"
-                          value={novaCompra.quantidade}
-                          onChange={(e) => setNovaCompra(prev => ({ ...prev, quantidade: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                      </div>
-                
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                        <input
-                          type="number"
-                          placeholder="Valor Unitário"
-                          value={novaCompra.valorUnitario}
-                          onChange={(e) => setNovaCompra(prev => ({ ...prev, valorUnitario: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                        <input
-                          type="date"
-                          value={novaCompra.data}
-                          onChange={(e) => setNovaCompra(prev => ({ ...prev, data: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                      </div>
-                
-                      <button
-                        onClick={registrarCompra}
-                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
-                      >
-                        + Registrar Compra
-                      </button>
-                    </div>
-                
-                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Compras Registradas</h3>
-                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg">
-                      {purchases.length === 0 ? (
-                        <p className="text-purple-300 italic">Nenhuma compra registrada.</p>
-                      ) : (
-                        <table className="w-full text-left text-purple-100 mt-3">
-                          <thead className="border-b border-purple-700 text-sm uppercase">
-                            <tr>
-                              <th>Produto</th>
-                              <th>Descrição</th>
-                              <th>Qtd</th>
-                              <th>Valor Unit.</th>
-                              <th>Data</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {purchases.map((c, i) => (
-                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
-                                <td>{c.produto}</td>
-                                <td>{c.descricao}</td>
-                                <td>{c.quantidade}</td>
-                                <td>R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
-                                <td>{c.data}</td>
-                              </tr>
+                        {sugestoesCompra.length > 0 && (
+                          <ul id="compra-sugestoes" className="absolute z-10 bg-gray-900 border border-white/10 mt-1 rounded-lg w-full max-h-40 overflow-y-auto suggestions-list">
+                            {sugestoesCompra.map((produto, index) => (
+                              <li
+                                key={index}
+                                onClick={() => handleSelectProdutoCompra(produto)}
+                                className="p-2 hover:bg-white/20 cursor-pointer text-purple-200"
+                              >
+                                {produto.nome}
+                              </li>
                             ))}
-                          </tbody>
-                        </table>
-                      )}
+                          </ul>
+                        )}
+                      </div>
+              
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        value={novaCompra.descricao}
+                        onChange={(e) => setNovaCompra(prev => ({ ...prev, descricao: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Quantidade"
+                        value={novaCompra.quantidade}
+                        onChange={(e) => setNovaCompra(prev => ({ ...prev, quantidade: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Valor Unitário"
+                        value={novaCompra.valorUnitario}
+                        onChange={(e) => setNovaCompra(prev => ({ ...prev, valorUnitario: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="date"
+                        value={novaCompra.data}
+                        onChange={(e) => setNovaCompra(prev => ({ ...prev, data: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300 md:col-span-2"
+                      />
+                    </div>
+              
+                    <button
+                      onClick={registrarCompra}
+                      className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold w-full flex items-center justify-center gap-2"
+                    >
+                      <icons.Plus /> Registrar Compra
+                    </button>
+              
+                    <h3 className="text-2xl font-bold text-white mb-6 mt-10">Compras Registradas</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left text-purple-100">
+                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                          <tr>
+                            <th className="px-4 py-3">Produto</th>
+                            <th className="px-4 py-3">Descrição</th>
+                            <th className="px-4 py-3">Qtd</th>
+                            <th className="px-4 py-3">Valor Unit.</th>
+                            <th className="px-4 py-3">Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {purchases.length === 0 ? (
+                            <tr><td colSpan="5" className="text-center py-6 text-purple-300">Nenhuma compra registrada</td></tr>
+                          ) : (
+                            purchases.map((c, i) => (
+                              <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                                <td className="px-4 py-2">{c.produto}</td>
+                                <td className="px-4 py-2">{c.descricao}</td>
+                                <td className="px-4 py-2">{c.quantidade}</td>
+                                <td className="px-4 py-2">R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
+                                <td className="px-4 py-2">{c.data}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
-
-                {activeTab === "estoque" && (
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-purple-100">📦 Controle de Estoque</h2>
                 
-                    {/* Campo de busca */}
-                    <div className="mb-4">
+                {activeTab === "estoque" && (
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                    <h3 className="text-2xl font-bold text-white mb-6">📦 Controle de Estoque</h3>
+                
+                    <div className="mb-6">
                       <input
                         type="text"
                         placeholder="Buscar produto..."
                         value={buscaEstoque}
                         onChange={(e) => setBuscaEstoque(e.target.value)}
-                        className="w-full md:w-1/3 p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-400"
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300 w-full md:w-1/3"
                       />
                     </div>
                 
-                    {/* Tabela de produtos */}
-                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg overflow-x-auto">
-                      <table className="w-full text-left text-purple-100">
-                        <thead className="border-b border-purple-700 text-sm uppercase">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left text-purple-100">
+                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
                           <tr>
-                            <th className="px-3 py-2">Produto</th>
-                            <th className="px-3 py-2">Categoria</th>
-                            <th className="px-3 py-2">Estoque</th>
-                            <th className="px-3 py-2">Estoque Mínimo</th>
-                            <th className="px-3 py-2">Custo Médio</th>
-                            <th className="px-3 py-2">Valor Total</th>
+                            <th className="px-4 py-3">Produto</th>
+                            <th className="px-4 py-3">Categoria</th>
+                            <th className="px-4 py-3 text-center">Estoque</th>
+                            <th className="px-4 py-3 text-center">Estoque Mínimo</th>
+                            <th className="px-4 py-3 text-center">Custo Médio</th>
+                            <th className="px-4 py-3 text-center">Valor Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1530,26 +1518,21 @@
                           ) : (
                             filteredProducts.map((p, i) => {
                               const { custoMedio, valorTotal } = calcularValoresEstoque(p, purchases, sales);
-                              const estoqueBaixo =
-                                parseFloat(p.estoque) < parseFloat(p.estoqueMinimo ?? 0);
+                              const estoqueBaixo = parseFloat(p.estoque) < parseFloat(p.estoqueMinimo ?? 0);
                 
                               return (
                                 <tr
                                   key={i}
-                                  className={`border-b border-purple-800 ${
-                                    estoqueBaixo ? "bg-red-500/10" : "hover:bg-purple-800/40"
+                                  className={`border-b border-white/5 ${
+                                    estoqueBaixo ? "bg-red-500/10" : "hover:bg-white/5"
                                   }`}
                                 >
-                                  <td className="px-3 py-2">{p.nome}</td>
-                                  <td className="px-3 py-2">{p.categoria}</td>
-                                  <td className="px-3 py-2">{p.estoque}</td>
-                                  <td className="px-3 py-2">{p.estoqueMinimo}</td>
-                                  <td className="px-3 py-2">
-                                    R$ {custoMedio.toFixed(2)}
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    R$ {valorTotal.toFixed(2)}
-                                  </td>
+                                  <td className="px-4 py-2">{p.nome}</td>
+                                  <td className="px-4 py-2">{p.categoria}</td>
+                                  <td className="px-4 py-2 text-center">{p.estoque}</td>
+                                  <td className="px-4 py-2 text-center">{p.estoqueMinimo}</td>
+                                  <td className="px-4 py-2 text-center">R$ {custoMedio.toFixed(2)}</td>
+                                  <td className="px-4 py-2 text-center">R$ {valorTotal.toFixed(2)}</td>
                                 </tr>
                               );
                             })
@@ -1559,7 +1542,7 @@
                     </div>
                   </div>
                 )}
-
+                
                 {activeTab === 'cadastro' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Cadastrar Novo Produto</h3>
@@ -1633,86 +1616,82 @@
                 )}
 
                 {activeTab === "financeiro" && (
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-purple-100">Controle Financeiro</h2>
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                    <h3 className="text-2xl font-bold text-white mb-6">Controle Financeiro</h3>
                 
-                    <div className="bg-purple-900/30 rounded-2xl p-5 shadow-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Descrição"
-                          value={novaTransacao.descricao}
-                          onChange={(e) => setNovaTransacao(prev => ({ ...prev, descricao: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                        <select
-                          value={novaTransacao.tipo}
-                          onChange={(e) => setNovaTransacao(prev => ({ ...prev, tipo: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100"
-                        >
-                          <option value="">Selecione o tipo</option>
-                          <option value="entrada">Entrada</option>
-                          <option value="saida">Saída</option>
-                        </select>
-                        <input
-                          type="number"
-                          placeholder="Valor (R$)"
-                          value={novaTransacao.valor}
-                          onChange={(e) => setNovaTransacao(prev => ({ ...prev, valor: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                        <input
-                          type="date"
-                          value={novaTransacao.data}
-                          onChange={(e) => setNovaTransacao(prev => ({ ...prev, data: e.target.value }))}
-                          className="w-full p-2 rounded-lg bg-purple-950/30 text-purple-100 placeholder-purple-400"
-                        />
-                      </div>
-                
-                      <button
-                        onClick={registrarTransacao}
-                        className="mt-4 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-semibold transition"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        value={novaTransacao.descricao}
+                        onChange={(e) => setNovaTransacao(prev => ({ ...prev, descricao: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <select
+                        value={novaTransacao.tipo}
+                        onChange={(e) => setNovaTransacao(prev => ({ ...prev, tipo: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30"
                       >
-                        + Registrar Transação
-                      </button>
+                        <option value="">Selecione o tipo</option>
+                        <option value="entrada">Entrada</option>
+                        <option value="saida">Saída</option>
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Valor (R$)"
+                        value={novaTransacao.valor}
+                        onChange={(e) => setNovaTransacao(prev => ({ ...prev, valor: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
+                      <input
+                        type="date"
+                        value={novaTransacao.data}
+                        onChange={(e) => setNovaTransacao(prev => ({ ...prev, data: e.target.value }))}
+                        className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
+                      />
                     </div>
                 
-                    <h3 className="text-lg font-semibold mt-8 text-purple-100">Transações Registradas</h3>
-                    <div className="bg-purple-900/30 mt-3 rounded-2xl p-4 shadow-lg overflow-x-auto">
-                      {transactions.length === 0 ? (
-                        <p className="text-purple-300 italic">Nenhuma transação registrada.</p>
-                      ) : (
-                        <table className="w-full text-left text-purple-100 mt-3">
-                          <thead className="border-b border-purple-700 text-sm uppercase bg-purple-950/30">
-                            <tr>
-                              <th className="p-2">Descrição</th>
-                              <th className="p-2">Tipo</th>
-                              <th className="p-2">Valor</th>
-                              <th className="p-2">Data</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {transactions.map((t, i) => (
-                              <tr key={i} className="border-b border-purple-800 hover:bg-purple-800/40">
-                                <td className="p-2">{t.descricao}</td>
-                                <td
-                                  className={`p-2 font-semibold ${
-                                    t.tipo === "entrada" ? "text-green-400" : "text-red-400"
-                                  }`}
-                                >
-                                  {t.tipo}
+                    <button
+                      onClick={registrarTransacao}
+                      className="bg-green-500 hover:bg-green-600 text-white rounded-lg p-3 font-semibold w-full flex items-center justify-center gap-2"
+                    >
+                      <icons.Plus /> Registrar Transação
+                    </button>
+                
+                    <h3 className="text-2xl font-bold text-white mb-6 mt-10">Transações Registradas</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left text-purple-100">
+                        <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
+                          <tr>
+                            <th className="px-4 py-3">Descrição</th>
+                            <th className="px-4 py-3">Tipo</th>
+                            <th className="px-4 py-3">Valor</th>
+                            <th className="px-4 py-3">Data</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {transactions.length === 0 ? (
+                            <tr><td colSpan="4" className="text-center py-6 text-purple-300">Nenhuma transação registrada</td></tr>
+                          ) : (
+                            transactions.map((t, i) => (
+                              <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                                <td className="px-4 py-2">{t.descricao}</td>
+                                <td className={`px-4 py-2 font-semibold ${
+                                  t.tipo === "entrada" ? "text-green-400" : "text-red-400"
+                                }`}>
+                                  {t.tipo === "entrada" ? "Entrada" : "Saída"}
                                 </td>
-                                <td className="p-2">R$ {Number(t.valor || 0).toFixed(2)}</td>
-                                <td className="p-2">{t.data}</td>
+                                <td className="px-4 py-2">R$ {Number(t.valor || 0).toFixed(2)}</td>
+                                <td className="px-4 py-2">{t.data}</td>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
-
+                  
                 {activeTab === 'historico' && (
                   <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                     <h3 className="text-2xl font-bold text-white mb-6">Histórico</h3>
