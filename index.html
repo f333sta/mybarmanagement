@@ -973,17 +973,17 @@
               const data = await apiCall('deleteProduto', { id: productId });
               
               if (data.success) {
-                showMessage('✅ Produto excluído', 'success');
+                showMessage('✅ Produto excluído com sucesso!', 'success');
                 loadAllData();
               } else {
                 showMessage('❌ ' + (data.message || 'Falha ao excluir produto'), 'error');
               }
             } catch (err) {
               console.error(err); 
-              showMessage('❌ ' + err.message, 'error');
+              showMessage('❌ Erro: ' + err.message, 'error');
             }
           }, [loadAllData]);
-        
+          
           const openEditProduct = (product) => {
             setEditingProduct({
               ...product,
@@ -1031,7 +1031,6 @@
                 showMessage("✅ Venda registrada com sucesso!", "success");
                 setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
                 await loadAllData();
-              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar venda.", "error");
               }
@@ -1053,7 +1052,6 @@
                 showMessage("✅ Compra registrada com sucesso!", "success");
                 setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
                 await loadAllData();
-              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar compra.", "error");
               }
@@ -1076,7 +1074,6 @@
                 setShowAddTransacao(false);
                 setNovaTransacao({ tipo: "", valor: "", descricao: "", data: "" });
                 loadAllData();
-              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar movimento", "error");
               }
