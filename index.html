@@ -1013,6 +1013,7 @@
             };
         
             await updateProductOnServer(payload);
+            showMessage('✅ Produto atualizado com sucesso!', 'success');
             setEditModalOpen(false);
             setEditingProduct(null);
           };
@@ -1030,6 +1031,7 @@
                 showMessage("✅ Venda registrada com sucesso!", "success");
                 setNovaVenda({ produto: "", descricao: "", quantidade: "", data: "" });
                 await loadAllData();
+              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar venda.", "error");
               }
@@ -1051,6 +1053,7 @@
                 showMessage("✅ Compra registrada com sucesso!", "success");
                 setNovaCompra({ produto: "", descricao: "", quantidade: "", valorUnitario: "", data: "" });
                 await loadAllData();
+              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar compra.", "error");
               }
@@ -1069,10 +1072,11 @@
               const data = await apiCall('addTransacao', novaTransacao);
               
               if (data.success) {
-                showMessage("✅ Movimento registrado!", "success");
+                showMessage("✅ Transação registrada com sucesso!", "success");
                 setShowAddTransacao(false);
                 setNovaTransacao({ tipo: "", valor: "", descricao: "", data: "" });
                 loadAllData();
+              }
               } else {
                 showMessage(data.message || "❌ Erro ao registrar movimento", "error");
               }
@@ -1572,7 +1576,6 @@
                         <option value="Água">Água</option>
                         <option value="Energético">Energético</option>
                         <option value="Refrigerante">Refrigerante</option>
-                        <option value="Outros">Outros</option>
                       </select>
                       <input type="text" placeholder="Código" value={newProduct.codigo} onChange={(e)=>setNewProduct({...newProduct, codigo: e.target.value})} className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300" />
                       <input type="number" placeholder="Estoque mínimo" value={newProduct.estoqueMinimo} onChange={(e)=>setNewProduct({...newProduct, estoqueMinimo: e.target.value})} className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300" />
@@ -1587,6 +1590,15 @@
                     </button>
 
                     <h3 className="text-2xl font-bold text-white mb-6 mt-10">Produtos Cadastrados</h3>
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="Buscar produto..."
+                        value={buscaEstoque}
+                        onChange={(e) => setBuscaEstoque(e.target.value)}
+                        className="w-full md:w-1/3 p-2 rounded-lg bg-white/20 text-white placeholder-purple-300 border border-white/30"
+                      />
+                    </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm text-left text-purple-100">
                         <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
@@ -1600,9 +1612,9 @@
                           </tr>
                         </thead>
                         <tbody>
-                          {products.length === 0 ? (
+                          {filteredProducts.length === 0 ? (
                             <tr><td colSpan="6" className="text-center py-6 text-purple-300">Nenhum produto cadastrado</td></tr>
-                          ) : products.map(prod => (
+                          ) : filteredProducts.map(prod => (
                             <tr key={prod.codigo || prod.id} className="border-b border-white/5 hover:bg-white/5">
                               <td className="px-4 py-2 font-mono">{prod.codigo}</td>
                               <td className="px-4 py-2">{prod.nome}</td>
@@ -1745,7 +1757,10 @@
                         </select>
                         <input type="number" value={editingProduct.estoqueMinimo} onChange={(e)=>setEditingProduct({...editingProduct, estoqueMinimo: e.target.value})} className="p-2 rounded border" placeholder="Estoque mínimo" />
                         <input type="number" step="0.01" value={editingProduct.precoVenda} onChange={(e)=>setEditingProduct({...editingProduct, precoVenda: e.target.value})} className="p-2 rounded border" placeholder="Preço de venda" />
-                        <input type="number" step="0.01" value={editingProduct.precoCusto} onChange={(e)=>setEditingProduct({...editingProduct, precoCusto: e.target.value})} className="p-2 rounded border" placeholder="Preço de custo" />
+                        <div className="p-2 rounded border bg-gray-100">
+                          <label className="text-xs text-gray-500 block">Preço de Custo (calculado)</label>
+                          <span className="text-gray-700 font-semibold">R$ {Number(editingProduct.precoCusto || 0).toFixed(2)}</span>
+                        </div>
                         <label className="flex items-center gap-2">
                           <input type="checkbox" checked={!!editingProduct.controlaEstoque} onChange={(e)=>setEditingProduct({...editingProduct, controlaEstoque: e.target.checked})} />
                           Controla Estoque
