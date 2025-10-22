@@ -385,23 +385,19 @@
 
         //Componente Antendente
         const AtendenteScreen = ({ onLogout }) => {
-          const [novoPedido, setNovoPedido] = useState({
-            cliente: "",
-            drinkId: null,
-            drinkBusca: "",
-          });
           const [produtos, setProdutos] = useState([]);
-          const [pedidos, setPedidos] = useState([]);
+          const [carrinho, setCarrinho] = useState({});
+          const [nomeCliente, setNomeCliente] = useState('');
           const [loading, setLoading] = useState(true);
-          const [message, setMessage] = useState("");
-          const [messageType, setMessageType] = useState("success");
-          const [enviando, setEnviando] = useState(false);
-          const [searchTerm, setSearchTerm] = useState("");
+          const [message, setMessage] = useState('');
+          const [messageType, setMessageType] = useState('success');
+          const [processando, setProcessando] = useState(false);
+          const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
         
-          const showMessage = (msg, type = "info") => {
+          const showMessage = (msg, type = 'info') => {
             setMessage(msg);
             setMessageType(type);
-            setTimeout(() => setMessage(""), 3500);
+            setTimeout(() => setMessage(''), 3500);
           };
         
           const loadProdutos = async () => {
@@ -411,20 +407,7 @@
                 setProdutos(data.produtos);
               }
             } catch (e) {
-              console.error('❌ Erro ao carregar produtos:', e);
-              showMessage("❌ Erro ao carregar produtos", "error");
-            }
-          };
-        
-          const loadPedidos = async () => {
-            try {
-              const data = await apiCall('getPedidosData');
-              if (data.pedidos && Array.isArray(data.pedidos)) {
-                setPedidos(data.pedidos);
-              }
-            } catch (e) {
-              console.error('❌ Erro ao carregar pedidos:', e);
-              showMessage("❌ Erro ao carregar pedidos", "error");
+              showMessage('❌ Erro ao carregar produtos', 'error');
             } finally {
               setLoading(false);
             }
@@ -432,44 +415,118 @@
         
           useEffect(() => {
             loadProdutos();
-            loadPedidos();
           }, []);
         
-          const addPedido = async () => {
-            if (!novoPedido.cliente || !novoPedido.drinkId) {
-              showMessage("Preencha o nome e selecione um drink!", "error");
-              return;
-            }
-          
-            const produto = produtos.find(p => p.id === novoPedido.drinkId);
-            if (!produto) {
-              showMessage("Produto não encontrado!", "error");
-              return;
-            }
-          
-            try {
-              setEnviando(true);
-              const data = await apiCall('addPedido', {
-                cliente: novoPedido.cliente.trim(),
-                produtoNome: produto.nome.trim(),
-                codigo: produto.codigo.trim(),
-                total: produto.precoVenda || 0
-              });
-              
-              if (data.success) {
-                showMessage("✅ Pedido registrado!", "success");
-                setNovoPedido({ cliente: "", drinkId: null, drinkBusca: "" });
-                setSearchTerm("");
-                loadPedidos();
+          const adicionarAoCarrinho = (produto) => {
+            setCarrinho(prev => ({
+              ...prev,
+              [produto.id]: (prev[produto.id] || 0) + 1
+            }));
+          };
+        
+          const removerDoCarrinho = (produtoId) => {
+            setCarrinho(prev => {
+              const novo = { ...prev };
+              if (novo[produtoId] > 1) {
+                novo[produtoId]--;
               } else {
-                showMessage("❌ " + (data.message || "Erro"), "error");
+                delete novo[produtoId];
               }
-            } catch (err) {
-              showMessage("❌ Erro: " + err.message, "error");
-            } finally {
-              setEnviando(false);
+              return novo;
+            });
+          };
+        
+          const limparCarrinho = () => {
+            setCarrinho({});
+            setNomeCliente('');
+          };
+        
+          const calcularTotal = () => {
+            return Object.entries(carrinho).reduce((total, [produtoId, quantidade]) => {
+              const produto = produtos.find(p => p.id == produtoId);
+              return total + (produto ? produto.precoVenda * quantidade : 0);
+            }, 0);
+          };
+        
+          const finalizarVenda = async () => {
+            if (Object.keys(carrinho).length === 0) {
+              showMessage('⚠️ Carrinho vazio!', 'error');
+              return;
             }
-          };          
+        
+            if (!nomeCliente.trim()) {
+              showMessage('⚠️ Informe o nome do cliente!', 'error');
+              return;
+            }
+        
+            try {
+              setProcessando(true);
+        
+              // Processa todas as vendas em paralelo
+              const promessasVenda = Object.entries(carrinho).map(([produtoId, quantidade]) => {
+                const produto = produtos.find(p => p.id == produtoId);
+                if (!produto) return null;
+        
+                return apiCall('enqueueVenda', {
+                  produto: produto.nome,
+                  quantidade: quantidade,
+                  cliente: nomeCliente.trim(),
+                  data: new Date().toISOString().split('T')[0]
+                })
+                .then(response => response)
+                .catch(error => {
+                  console.error('Erro no item:', produto.nome, error);
+                  return { success: false, message: 'Erro de conexão para o item.' };
+                });
+              }).filter(p => p !== null);
+        
+              const resultados = await Promise.all(promessasVenda);
+              
+              const sucessoGeral = resultados.every(res => res && res.success);
+              
+              if (sucessoGeral) {
+                showMessage('✅ Venda registrada com sucesso! Processando...', 'success');
+                setCarrinho({});
+                setNomeCliente('');
+                setTimeout(() => loadProdutos(), 1000);
+              } else {
+                const totalFalhas = resultados.filter(res => !res || !res.success).length;
+                showMessage(`⚠️ ${totalFalhas} item(s) falhou(ram). Tente novamente.`, 'error');
+              }
+        
+            } catch (error) {
+              console.error('Erro ao finalizar venda:', error);
+              showMessage('❌ Erro interno ao processar venda.', 'error');
+            } finally {
+              setProcessando(false);
+            }
+          };
+        
+          // Função para obter emoji por categoria
+          const getCategoryEmoji = (categoria) => {
+            const emojis = {
+              'cerveja': '🍺',
+              'drinks': '🍸',
+              'doses': '🥃',
+              'água': '💧',
+              'energético': '⚡',
+              'refrigerante': '🥤',
+              'outros': '❓'
+            };
+            return emojis[categoria?.toLowerCase()] || '🍽️';
+          };
+        
+          const categorias = ['Todos', ...new Set(produtos.map(p => p.categoria))];
+          
+          const produtosFiltrados = categoriaAtiva === 'Todos'
+            ? produtos
+            : produtos.filter(p => p.categoria === categoriaAtiva);
+        
+          const itensCarrinho = Object.entries(carrinho).map(([produtoId, quantidade]) => {
+            const produto = produtos.find(p => p.id == produtoId);
+            return produto ? { ...produto, quantidade } : null;
+          }).filter(Boolean);
+        
           if (loading) {
             return (
               <div className="min-h-screen flex items-center justify-center text-white text-2xl bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
@@ -483,10 +540,11 @@
               </div>
             );
           }
-
+        
           return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 pb-10 p-4">
-              <div className="max-w-6xl mx-auto">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 p-4">
+              <div className="max-w-7xl mx-auto">
+                {/* Header */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
                   <h1 className="text-3xl font-bold text-white">🧾 Atendente</h1>
                   <button
@@ -498,169 +556,201 @@
                 </div>
         
                 {message && (
-                  <div
-                    className={`mb-4 p-3 rounded-lg text-center ${
-                      messageType === "success"
-                        ? "bg-green-500/20 text-green-200"
-                        : "bg-red-500/20 text-red-200"
-                    }`}
-                  >
+                  <div className={`mb-4 p-3 rounded-lg text-center ${
+                    messageType === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
+                  }`}>
                     {message}
                   </div>
                 )}
         
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-4">Novo Pedido</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Nome do cliente"
-                      value={novoPedido.cliente}
-                      onChange={(e) =>
-                        setNovoPedido({ ...novoPedido, cliente: e.target.value })
-                      }
-                      className="bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                    />
-                    
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Buscar drink..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white/20 text-white rounded-lg p-3 border border-white/30 placeholder-purple-300"
-                      />
-                      
-                      {searchTerm && (
-                        <div className="absolute z-50 w-full bg-gray-900 border border-white/10 mt-1 rounded-lg max-h-48 overflow-y-auto">
-                          {produtos
-                            .filter((p) => {
-                              const categoria = String(p.categoria || "").toLowerCase();
-                              const nome = String(p.nome || "").toLowerCase();
-                              const busca = searchTerm.toLowerCase();
-                              return categoria === "drinks" && nome.includes(busca);
-                            })
-                            .map((p, i) => (
-                              <div
-                                key={p.id || `${p.codigo}-${i}`}
-                                onClick={() => {
-                                  setNovoPedido({
-                                    ...novoPedido,
-                                    drinkId: p.id,
-                                    drinkBusca: `${p.nome} (${p.codigo})`,
-                                  });
-                                  setSearchTerm("");
-                                }}
-                                className="p-2 hover:bg-white/20 cursor-pointer text-purple-200"
-                              >
-                                {p.nome} ({p.codigo}) – R$ {p.precoVenda.toFixed(2)}
-                              </div>
-                            ))}
-                          
-                          {produtos.filter((p) => {
-                            const categoria = String(p.categoria || "").toLowerCase();
-                            const nome = String(p.nome || "").toLowerCase();
-                            return categoria === "drinks" && nome.includes(searchTerm.toLowerCase());
-                          }).length === 0 && (
-                            <div className="p-2 text-center text-purple-300">
-                              Nenhum drink encontrado
-                            </div>
-                          )}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Produtos */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                      {/* Input Nome Cliente */}
+                      <div className="mb-6">
+                        <label className="block text-white font-semibold mb-2">Nome do Cliente</label>
+                        <div className="flex items-center gap-2 bg-white/20 rounded-lg p-3 border border-white/30">
+                          <icons.User />
+                          <input
+                            type="text"
+                            placeholder="Digite o nome do cliente..."
+                            value={nomeCliente}
+                            onChange={(e) => setNomeCliente(e.target.value)}
+                            className="flex-1 bg-transparent text-white placeholder-purple-300 outline-none"
+                          />
                         </div>
-                      )}
+                      </div>
+        
+                      {/* Filtro de Categorias */}
+                      <div className="mb-6">
+                        <h3 className="text-white font-semibold mb-3">Categorias</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {categorias.map(cat => (
+                            <button
+                              key={cat}
+                              onClick={() => setCategoriaAtiva(cat)}
+                              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                categoriaAtiva === cat
+                                  ? 'bg-green-500 text-white shadow-lg scale-105'
+                                  : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+        
+                      {/* Grid de Produtos */}
+                      <h3 className="text-white font-semibold mb-3">Produtos</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {produtosFiltrados.length === 0 ? (
+                          <div className="col-span-full text-center text-purple-300 py-8">
+                            Nenhum produto encontrado nesta categoria
+                          </div>
+                        ) : (
+                          produtosFiltrados.map(produto => (
+                            <button
+                              key={produto.id}
+                              onClick={() => adicionarAoCarrinho(produto)}
+                              className="bg-white/20 hover:bg-white/30 active:scale-95 p-6 rounded-xl transition-all"
+                            >
+                              <div className="text-white text-center">
+                                <div className="text-4xl mb-2">
+                                  {getCategoryEmoji(produto.categoria)}
+                                </div>
+                                <div className="font-bold mb-1 text-sm">{produto.nome}</div>
+                                <div className="text-green-300 text-lg font-semibold">
+                                  R$ {produto.precoVenda.toFixed(2)}
+                                </div>
+                                <div className="text-xs text-purple-300 mt-2">
+                                  Estoque: {produto.estoque}
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
                     </div>
                   </div>
-                  
-                  {novoPedido.drinkBusca && (
-                    <div className="bg-white/10 rounded-lg p-3 mb-4 text-purple-200">
-                      Selecionado: {novoPedido.drinkBusca}
-                    </div>
-                  )}
-                  
-                  <button
-                    onClick={addPedido}
-                    disabled={enviando}
-                    className={`bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 ${
-                      enviando ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {enviando ? (
-                      <>
-                        <svg className="animate-spin w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
-                        </svg>
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <icons.Plus /> Registrar Pedido
-                      </>
-                    )}
-                  </button>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                  <h3 className="text-2xl font-bold text-white mb-6">Pedidos Cadastrados</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-purple-100">
-                      <thead className="text-xs uppercase text-purple-300 border-b border-white/10">
-                        <tr>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3">Cliente</th>
-                          <th className="px-4 py-3">Produto</th>
-                          <th className="px-4 py-3">Código</th>
-                          <th className="px-4 py-3">Total</th>
-                          <th className="px-4 py-3">Data</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pedidos.length === 0 ? (
-                          <tr>
-                            <td colSpan="6" className="text-center py-6 text-purple-300">
-                              Nenhum pedido registrado.
-                            </td>
-                          </tr>
-                        ) : (
-                          (() => {
-                            const pedidosOrdenados = [...pedidos].sort((a, b) => {
-                              if (a.status === 'pendente' && b.status !== 'pendente') return -1;
-                              if (a.status !== 'pendente' && b.status === 'pendente') return 1;
-                              
-                              // Prioridade 2: ID (maior = mais recente)
-                              return (b.id || 0) - (a.id || 0);
-                            });
-                            
-                            return pedidosOrdenados.map((p, i) => (
-                              <tr key={p.id || i} className="border-b border-white/5 hover:bg-white/5">
-                                <td className="px-4 py-2 text-center">
-                                  <div className="flex justify-center">
-                                    <div 
-                                      className={`w-3 h-3 rounded-full ${
-                                        p.status === 'pendente' ? 'bg-yellow-400' : 'bg-green-400'
-                                      }`}
-                                      title={p.status === 'pendente' ? 'Pendente' : 'Concluído'}
-                                    />
+        
+                  {/* Carrinho */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 sticky top-4">
+                      <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        <icons.ShoppingCart />
+                        Carrinho
+                      </h3>
+        
+                      {itensCarrinho.length === 0 ? (
+                        <div className="text-center py-12">
+                          <div className="text-6xl mb-4">🛒</div>
+                          <p className="text-purple-300">Carrinho vazio</p>
+                          <p className="text-purple-400 text-sm mt-2">Adicione produtos para começar</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+                            {itensCarrinho.map(item => (
+                              <div key={item.id} className="bg-white/10 rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1">
+                                    <div className="text-white font-semibold">{item.nome}</div>
+                                    <div className="text-purple-300 text-sm">
+                                      R$ {item.precoVenda.toFixed(2)} × {item.quantidade}
+                                    </div>
                                   </div>
-                                </td>
-                                <td className="px-4 py-2">{p.cliente}</td>
-                                <td className="px-4 py-2">{p.produtoNome}</td>
-                                <td className="px-4 py-2">{p.codigo}</td>
-                                <td className="px-4 py-2">R$ {parseFloat(p.total || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{p.data}</td>
-                              </tr>
-                            ));
-                          })()
-                        )}
-                      </tbody>
-                    </table>
+                                  <div className="text-green-300 font-bold text-lg">
+                                    R$ {(item.precoVenda * item.quantidade).toFixed(2)}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => removerDoCarrinho(item.id)}
+                                      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                    >
+                                      <icons.Minus />
+                                    </button>
+                                    <span className="text-white font-bold text-lg min-w-[40px] text-center">
+                                      {item.quantidade}
+                                    </span>
+                                    <button
+                                      onClick={() => adicionarAoCarrinho(item)}
+                                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition-colors"
+                                    >
+                                      <icons.Plus />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const novo = { ...carrinho };
+                                      delete novo[item.id];
+                                      setCarrinho(novo);
+                                    }}
+                                    className="text-red-400 hover:text-red-300 transition-colors"
+                                    title="Remover item"
+                                  >
+                                    <icons.Trash2 />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+        
+                          <div className="border-t border-white/20 pt-4 mb-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-purple-200">Itens:</span>
+                              <span className="text-white font-semibold">
+                                {Object.values(carrinho).reduce((a, b) => a + b, 0)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-white text-2xl font-bold">
+                              <span>Total:</span>
+                              <span className="text-green-300">R$ {calcularTotal().toFixed(2)}</span>
+                            </div>
+                          </div>
+        
+                          <div className="space-y-2">
+                            <button
+                              onClick={finalizarVenda}
+                              disabled={processando || !nomeCliente.trim()}
+                              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded-lg p-4 font-semibold flex items-center justify-center gap-2 transition-colors"
+                            >
+                              {processando ? (
+                                <>
+                                  <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                                  </svg>
+                                  Processando...
+                                </>
+                              ) : (
+                                <>
+                                  <icons.Check />
+                                  Finalizar Venda
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={limparCarrinho}
+                              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors"
+                            >
+                              <icons.Trash2 />
+                              Limpar Carrinho
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           );
         };
-
+      
         // Componente Barista
         const BaristaScreen = ({ onLogout }) => {
           const [pedidos, setPedidos] = useState([]);
