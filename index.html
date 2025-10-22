@@ -544,191 +544,205 @@
           }
         
           return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 p-4">
-              <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
-                  <h1 className="text-3xl font-bold text-white">🧾 Atendente</h1>
-                  <button
-                    onClick={onLogout}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <icons.LogOut /> Sair
-                  </button>
-                </div>
-        
-                {message && (
-                  <div className={`mb-4 p-3 rounded-lg text-center ${
-                    messageType === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
-                  }`}>
-                    {message}
-                  </div>
-                )}
-        
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Filtro de Categorias */}
-                  <div className="lg:col-span-2">
-                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                      {/* Campo Observações (Não Obrigatório) */}
-                      <div className="mb-6">
-                        <label className="block text-white font-semibold mb-2">Observações</label>
-                        <textarea
-                          placeholder="Adicione observações sobre o pedido..."
-                          value={observacoes}
-                          onChange={(e) => setObservacoes(e.target.value)}
-                          rows="3"
-                          className="w-full bg-white/20 text-white placeholder-purple-300 outline-none p-3 rounded-lg border border-white/30"
-                        />
-                      </div>
-
-                      {/* Grid de Produtos */}
-                      <h3 className="text-white font-semibold mb-3">Produtos</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-green-900 to-slate-900 p-4">
+              <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20 flex justify-between items-center">
+                  <h1 className="text-3xl font-bold text-white">🧾 Atendente</h1>
+                  <button
+                    onClick={onLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <icons.LogOut /> Sair
+                  </button>
+                </div>
+        
+                {message && (
+                  <div className={`mb-4 p-3 rounded-lg text-center ${
+                    messageType === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
+                  }`}>
+                    {message}
+                  </div>
+                )}
+        
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* Coluna Principal: Filtro e Produtos (2/3 da tela no desktop) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Filtro de Categorias */}
+                        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20 overflow-x-auto shadow-xl">
+                            <div className="flex space-x-3 whitespace-nowrap">
+                                {categorias.map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setCategoriaAtiva(cat)}
+                                        className={`
+                                            px-4 py-2 rounded-full font-semibold transition-all duration-200 text-sm flex items-center gap-2
+                                            ${
+                                                categoriaAtiva === cat
+                                                    ? 'bg-green-500 text-white shadow-lg'
+                                                    : 'bg-white/20 text-green-100 hover:bg-white/30'
+                                            }
+                                        `}
+                                    >
+                                        {getCategoryEmoji(cat)} {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+        
+                        {/* Lista de Produtos Filtrados (NOVO FORMATO) */}
                         {produtosFiltrados.length === 0 ? (
-                          <div className="col-span-full text-center text-purple-300 py-8">
-                            Nenhum produto encontrado nesta categoria
-                          </div>
+                            <div className="col-span-full text-center text-green-300 py-8 bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                                Nenhum produto encontrado na categoria "{categoriaAtiva}"
+                            </div>
                         ) : (
-                          produtosFiltrados.map(produto => (
-                            <button
-                              key={produto.id}
-                              onClick={() => adicionarAoCarrinho(produto)}
-                              className="bg-white/20 hover:bg-white/30 active:scale-95 p-6 rounded-xl transition-all"
-                            >
-                              <div className="text-white text-center">
-                                <div className="text-4xl mb-2">
-                                  {getCategoryEmoji(produto.categoria)}
-                                </div>
-                                <div className="font-bold mb-1 text-sm">{produto.nome}</div>
-                                <div className="text-green-300 text-lg font-semibold">
-                                  R$ {produto.precoVenda.toFixed(2)}
-                                </div>
-                                <div className="text-xs text-purple-300 mt-2">
-                                  Estoque: {produto.estoque}
-                                </div>
-                              </div>
-                            </button>
-                          ))
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {produtosFiltrados.map(produto => (
+                                <div 
+                                    key={produto.id} 
+                                    onClick={() => adicionarAoCarrinho(produto)}
+                                    className="bg-white/10 backdrop-blur-lg rounded-xl p-3 text-center cursor-pointer hover:bg-green-500/30 transition-all duration-200 border border-white/10 shadow-lg relative flex flex-col justify-between h-full"
+                                >
+                                    {produto.controlaEstoque && produto.estoque <= produto.estoqueMinimo && (
+                                        <span className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-md">
+                                            Baixo Est.
+                                        </span>
+                                    )}
+                                    <div className="text-4xl mb-2">
+                                        {getCategoryEmoji(produto.categoria)}
+                                    </div>
+                                    <div className="font-semibold text-white mb-1">
+                                        {produto.nome}
+                                    </div>
+                                    <div className="text-xl font-bold text-green-400">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.precoVenda)}
+                                    </div>
+                                    <div className="text-xs text-green-100/70 mt-1">
+                                        {produto.controlaEstoque ? `Estoque: ${produto.estoque}` : 'Estoque Ilimitado'}
+                                    </div>
+                                </div>
+                            ))}
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
-        
-                  {/* Carrinho */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 sticky top-4">
-                      <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                        <icons.ShoppingCart />
-                        Carrinho
-                      </h3>
-        
-                      {itensCarrinho.length === 0 ? (
-                        <div className="text-center py-12">
-                          <div className="text-6xl mb-4">🛒</div>
-                          <p className="text-purple-300">Carrinho vazio</p>
-                          <p className="text-purple-400 text-sm mt-2">Adicione produtos para começar</p>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
-                            {itensCarrinho.map(item => (
-                              <div key={item.id} className="bg-white/10 rounded-lg p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div className="flex-1">
-                                    <div className="text-white font-semibold">{item.nome}</div>
-                                    <div className="text-purple-300 text-sm">
-                                      R$ {item.precoVenda.toFixed(2)} × {item.quantidade}
-                                    </div>
-                                  </div>
-                                  <div className="text-green-300 font-bold text-lg">
-                                    R$ {(item.precoVenda * item.quantidade).toFixed(2)}
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => removerDoCarrinho(item.id)}
-                                      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
-                                    >
-                                      <icons.Minus />
-                                    </button>
-                                    <span className="text-white font-bold text-lg min-w-[40px] text-center">
-                                      {item.quantidade}
-                                    </span>
-                                    <button
-                                      onClick={() => adicionarAoCarrinho(item)}
-                                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition-colors"
-                                    >
-                                      <icons.Plus />
-                                    </button>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      const novo = { ...carrinho };
-                                      delete novo[item.id];
-                                      setCarrinho(novo);
-                                    }}
-                                    className="text-red-400 hover:text-red-300 transition-colors"
-                                    title="Remover item"
-                                  >
-                                    <icons.Trash2 />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-        
-                          <div className="border-t border-white/20 pt-4 mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-purple-200">Itens:</span>
-                              <span className="text-white font-semibold">
-                                {Object.values(carrinho).reduce((a, b) => a + b, 0)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center text-white text-2xl font-bold">
-                              <span>Total:</span>
-                              <span className="text-green-300">R$ {calcularTotal().toFixed(2)}</span>
-                            </div>
-                          </div>
-        
-                          <div className="space-y-2">
-                            <button
-                              onClick={finalizarVenda}
-                              disabled={processando}
-                              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded-lg p-4 font-semibold flex items-center justify-center gap-2 transition-colors"
-                            >
-                              {processando ? (
-                                <>
-                                  <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
-                                  </svg>
-                                  Processando...
-                                </>
-                              ) : (
-                                <>
-                                  <icons.Check />
-                                  Finalizar Venda
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={limparCarrinho}
-                              className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors"
-                            >
-                              <icons.Trash2 />
-                              Limpar Carrinho
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        };
+                    </div>
+                    
+                    {/* Carrinho */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 sticky top-4">
+                            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                                <icons.ShoppingCart />
+                                Carrinho
+                            </h3>
+        
+                            {itensCarrinho.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <div className="text-6xl mb-4">🛒</div>
+                                    <p className="text-purple-300">Carrinho vazio</p>
+                                    <p className="text-purple-400 text-sm mt-2">Adicione produtos para começar</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+                                        {itensCarrinho.map(item => (
+                                            <div key={item.id} className="bg-white/10 rounded-lg p-4">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex-1">
+                                                        <div className="text-white font-semibold">{item.nome}</div>
+                                                        <div className="text-purple-300 text-sm">
+                                                            R$ {item.precoVenda.toFixed(2)} × {item.quantidade}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-green-300 font-bold text-lg">
+                                                        R$ {(item.precoVenda * item.quantidade).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => removerDoCarrinho(item.id)}
+                                                            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                                        >
+                                                            <icons.Minus />
+                                                        </button>
+                                                        <span className="text-white font-bold text-lg min-w-[40px] text-center">
+                                                            {item.quantidade}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => adicionarAoCarrinho(item)}
+                                                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition-colors"
+                                                        >
+                                                            <icons.Plus />
+                                                        </button>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            const novo = { ...carrinho };
+                                                            delete novo[item.id];
+                                                            setCarrinho(novo);
+                                                        }}
+                                                        className="text-red-400 hover:text-red-300 transition-colors"
+                                                        title="Remover item"
+                                                        >
+                                                            <icons.Trash2 />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+        
+                                    <div className="border-t border-white/20 pt-4 mb-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-purple-200">Itens:</span>
+                                            <span className="text-white font-semibold">
+                                                {Object.values(carrinho).reduce((a, b) => a + b, 0)}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-white text-2xl font-bold">
+                                            <span>Total:</span>
+                                            <span className="text-green-300">R$ {calcularTotal().toFixed(2)}</span>
+                                        </div>
+                                    </div>
+        
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={finalizarVenda}
+                                            disabled={processando}
+                                            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded-lg p-4 font-semibold flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            {processando ? (
+                                                <>
+                                                    <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                                                    </svg>
+                                                    Processando...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <icons.Check />
+                                                    Finalizar Venda
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={limparCarrinho}
+                                            className="w-full bg-red-500 hover:bg-red-600 text-white rounded-lg p-3 font-semibold flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            <icons.Trash2 />
+                                            Limpar Carrinho
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
       
         // Componente Barista
         const BaristaScreen = ({ onLogout }) => {
