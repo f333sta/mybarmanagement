@@ -299,7 +299,7 @@
                       <icons.BarChart3 />
                       <div>
                         <div className="text-lg">Manager</div>
-                        <div className="text-sm opacity-80">Acesso completo ao sistema</div>
+                        <div className="text-sm opacity-80">Controle completo</div>
                       </div>
                     </div>
                   </button>
@@ -333,7 +333,7 @@
                       <icons.Cocktail />
                       <div>
                         <div className="text-lg">Barista</div>
-                        <div className="text-sm opacity-80"> pedidos</div>
+                        <div className="text-sm opacity-80">Lista de pedidos</div>
                       </div>
                     </div>
                   </button>
@@ -392,7 +392,7 @@
         const AtendenteScreen = ({ onLogout }) => {
           const [produtos, setProdutos] = useState([]);
           const [carrinho, setCarrinho] = useState({});
-          const [nomeCliente, setNomeCliente] = useState('');
+          const [observacoes, setObservacoes] = useState('');
           const [loading, setLoading] = useState(true);
           const [message, setMessage] = useState('');
           const [messageType, setMessageType] = useState('success');
@@ -443,7 +443,7 @@
         
           const limparCarrinho = () => {
             setCarrinho({});
-            setNomeCliente('');
+            setObservacoes('');
           };
         
           const calcularTotal = () => {
@@ -459,11 +459,6 @@
               return;
             }
         
-            if (!nomeCliente.trim()) {
-              showMessage('⚠️ Informe o nome do cliente!', 'error');
-              return;
-            }
-        
             try {
               setProcessando(true);
         
@@ -475,7 +470,7 @@
                 return apiCall('enqueueVenda', {
                   produto: produto.nome,
                   quantidade: quantidade,
-                  cliente: nomeCliente.trim(),
+                  observacoes: observacoes.trim(),
                   data: new Date().toISOString().split('T')[0]
                 })
                 .then(response => response)
@@ -492,7 +487,7 @@
               if (sucessoGeral) {
                 showMessage('✅ Venda registrada com sucesso! Processando...', 'success');
                 setCarrinho({});
-                setNomeCliente('');
+                setObservacoes('');
                 setTimeout(() => loadProdutos(), 1000);
               } else {
                 const totalFalhas = resultados.filter(res => !res || !res.success).length;
@@ -586,27 +581,21 @@
                           />
                         </div>
                       </div>
-        
                       {/* Filtro de Categorias */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+                      {/* Campo Observações (Não Obrigatório) */}
                       <div className="mb-6">
-                        <h3 className="text-white font-semibold mb-3">Categorias</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {categorias.map(cat => (
-                            <button
-                              key={cat}
-                              onClick={() => setCategoriaAtiva(cat)}
-                              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                categoriaAtiva === cat
-                                  ? 'bg-green-500 text-white shadow-lg scale-105'
-                                  : 'bg-white/10 text-purple-200 hover:bg-white/20'
-                              }`}
-                            >
-                              {cat}
-                            </button>
-                          ))}
-                        </div>
+                        <label className="block text-white font-semibold mb-2">Observações (Opcional)</label>
+                        <textarea
+                          placeholder="Adicione observações sobre o pedido..."
+                          value={observacoes}
+                          onChange={(e) => setObservacoes(e.target.value)}
+                          rows="3"
+                          className="w-full bg-white/20 text-white placeholder-purple-300 outline-none p-3 rounded-lg border border-white/30"
+                        />
                       </div>
-        
+
                       {/* Grid de Produtos */}
                       <h3 className="text-white font-semibold mb-3">Produtos</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -720,7 +709,7 @@
                           <div className="space-y-2">
                             <button
                               onClick={finalizarVenda}
-                              disabled={processando || !nomeCliente.trim()}
+                              disabled={processando}
                               className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded-lg p-4 font-semibold flex items-center justify-center gap-2 transition-colors"
                             >
                               {processando ? (
