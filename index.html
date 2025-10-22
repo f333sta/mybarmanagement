@@ -7,8 +7,10 @@
 
   <script>
     window.onerror = function (msg, url, line, col, error) {
-      alert("Erro detectado: " + msg);
-    };
+      console.error("Erro Fatal Detectado:", msg, "Linha:", line);
+        if (typeof showMessage === 'function') { showMessage(`Erro: ${msg}`, 'error'); }
+      return true;
+      };
   </script>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -564,29 +566,12 @@
                 )}
         
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Produtos */}
-                  <div className="lg:col-span-2">
-                    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-                      {/* Input Nome Cliente */}
-                      <div className="mb-6">
-                        <label className="block text-white font-semibold mb-2">Nome do Cliente</label>
-                        <div className="flex items-center gap-2 bg-white/20 rounded-lg p-3 border border-white/30">
-                          <icons.User />
-                          <input
-                            type="text"
-                            placeholder="Digite o nome do cliente..."
-                            value={nomeCliente}
-                            onChange={(e) => setNomeCliente(e.target.value)}
-                            className="flex-1 bg-transparent text-white placeholder-purple-300 outline-none"
-                          />
-                        </div>
-                      </div>
-                      {/* Filtro de Categorias */}
+                  {/* Filtro de Categorias */}
                   <div className="lg:col-span-2">
                     <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
                       {/* Campo Observações (Não Obrigatório) */}
                       <div className="mb-6">
-                        <label className="block text-white font-semibold mb-2">Observações (Opcional)</label>
+                        <label className="block text-white font-semibold mb-2">Observações</label>
                         <textarea
                           placeholder="Adicione observações sobre o pedido..."
                           value={observacoes}
