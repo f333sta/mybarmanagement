@@ -9,7 +9,6 @@
     window.onerror = function (msg, url, line, col, error) {
       console.error("Erro Fatal Detectado:", msg, "Linha:", line);
         if (typeof showMessage === 'function') { showMessage(`Erro: ${msg}`, 'error'); }
-      return true;
       };
   </script>
 
