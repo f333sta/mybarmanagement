@@ -809,7 +809,7 @@
           };
         
           const pedidosPendentes = pedidos.filter((p) => p.status === "pendente");
-        
+                
           if (loading) {
             return (
               <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
@@ -849,41 +849,47 @@
                     <p className="text-purple-200 text-center py-6">Nenhum pedido pendente 🎉</p>
                   ) : (
                     <div className="space-y-3">
-                      {pedidosPendentes.map((p) => (
-                        <div
-                          key={p.id}
-                          className="bg-white/10 border border-white/20 rounded-lg p-4 flex justify-between items-center"
-                        >
-                          <div>
-                            <p className="text-white font-semibold">
-                              {p.cliente} – <span className="text-purple-300">{p.produtoNome}</span>
-                            </p>
-                            <p className="text-purple-200 text-sm">
-                              #{p.numeroPedido} • {formatISODateTimeBR(p.dataAbertura)}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => finalizarPedido(p.id)}
-                            disabled={processando === p.id}
-                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
-                          >
-                            {processando === p.id ? (
-                              <>
-                                <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
-                                </svg>
-                                Processando...
-                              </>
-                            ) : (
-                              <>
-                                <icons.Check /> Finalizar
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                      {pedidosPendentes.map((p) => {
+                          const [dataStr, horaStr] = p.dataHoraAbertura 
+                            ? formatISODateTimeBR(p.dataHoraAbertura).split(' ') 
+                            : ['N/A', 'N/A'];
+
+                          return (
+                        <div
+                          key={p.id}
+                          className="bg-white/10 border border-white/20 rounded-lg p-4 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="text-white font-semibold">
+                                {p.observacoes} – <span className="text-purple-300">{p.produtoNome}</span>
+                            </p>
+                            <p className="text-purple-200 text-sm">
+                                <span className="font-bold">#{p.numeroPedido}</span> • <span className="text-sm">{dataStr}</span> às <span className="font-bold">{horaStr}</span>
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => finalizarPedido(p.id)}
+                            disabled={processando === p.id}
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+                          >
+                            {processando === p.id ? (
+                              <>
+                                <svg className="animate-spin w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M4 12a8 8 0 018-8" />
+                                </svg>
+                                Processando...
+                              </>
+                            ) : (
+                              <>
+                                <icons.Check /> Finalizar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        )
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
