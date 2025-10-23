@@ -1598,7 +1598,7 @@
                                 <td className="px-4 py-2">{c.descricao}</td>
                                 <td className="px-4 py-2">{c.quantidade}</td>
                                 <td className="px-4 py-2">R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{c. data ? formatISODateTimeBR(c.data).split(' ')[0] : ''}</td>
+                                <td className="px-4 py-2">{c.dataCompra ? formatISODateTimeBR(c.dataCompra).split(' ')[0] : ''}</td>
                               </tr>
                             ))
                           )}
