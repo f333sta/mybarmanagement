@@ -850,9 +850,11 @@
                   ) : (
                     <div className="space-y-3">
                       {pedidosPendentes.map((p) => {
-                          const [dataStr, horaStr] = p.dataHoraAbertura 
+                          const fullDateStr = p.dataHoraAbertura
                             ? formatISODateTimeBR(p.dataHoraAbertura).split(' ') 
                             : ['N/A', 'N/A'];
+                      
+                          const [dataStr, horaStr = 'N/A'] = fullDateStr.split(' ');
 
                           return (
                         <div
