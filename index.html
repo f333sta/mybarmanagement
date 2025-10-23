@@ -1504,7 +1504,7 @@
                                 <td className="px-4 py-2">{v.produto}</td>
                                 <td className="px-4 py-2">{v.descricao}</td>
                                 <td className="px-4 py-2">{v.quantidade}</td>
-                                <td className="px-4 py-2">{formatISODateTimeBR(v.data).split(' ')[0]}</td>
+                                <td className="px-4 py-2">{formatISODateTimeBR(v.dataVenda).split(' ')[0]}</td>
                               </tr>
                             ))
                           )}
@@ -1599,7 +1599,7 @@
                                 <td className="px-4 py-2">{c.descricao}</td>
                                 <td className="px-4 py-2">{c.quantidade}</td>
                                 <td className="px-4 py-2">R$ {Number(c.valorUnitario || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{formatISODateTimeBR(compra.dataCompra).split(' ')[0]}</td>
+                                <td className="px-4 py-2">{formatISODateTimeBR(c.dataCompra).split(' ')[0]}</td>
                               </tr>
                             ))
                           )}
@@ -1809,7 +1809,7 @@
                                   {t.tipo === "entrada" ? "Entrada" : "Saída"}
                                 </td>
                                 <td className="px-4 py-2">R$ {Number(t.valor || 0).toFixed(2)}</td>
-                                <td className="px-4 py-2">{formatISODateTimeBR(transacao.data).split(' ')[0]}</td>
+                                <td className="px-4 py-2">{formatISODateTimeBR(t.data).split(' ')[0]}</td>
                               </tr>
                             ))
                           )}
