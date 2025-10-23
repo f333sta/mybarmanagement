@@ -854,6 +854,8 @@
                             ? formatISODateTimeBR(p.dataHoraAbertura).split(' ') 
                             : ['N/A', 'N/A'];
                       
+                          const fullDateStr = String(formattedDate);
+                      
                           const [dataStr, horaStr = 'N/A'] = fullDateStr.split(' ');
 
                           return (
